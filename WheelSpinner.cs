@@ -57,8 +57,10 @@ namespace WheelSpinner
             window.Owner = Api.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             
+            
             window.ShowDialog();
         }
+        
         
         public override void OnGameInstalled(OnGameInstalledEventArgs args)
         {

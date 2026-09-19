@@ -17,8 +17,8 @@ namespace WheelSpinner
     {
         private IPlayniteAPI Api { get; set; }
         private List<Game> _games;
-        private List<Guid> _excludedGames = new List<Guid>();
-        private List<MultipliedGame> _multipliedGames = new List<MultipliedGame>();
+        public readonly List<Guid> ExcludedGames = new List<Guid>();
+        public readonly List<MultipliedGame> MultipliedGames = new List<MultipliedGame>();
 
         public SpinWheelWindow(IPlayniteAPI api)
         {
@@ -54,7 +54,7 @@ namespace WheelSpinner
             var mult = int.Parse(textBox.Text);
             if (mult > 1)
             {
-                _multipliedGames.Add(new MultipliedGame(Guid.Parse(textBox.Tag.ToString()), mult));
+                MultipliedGames.Add(new MultipliedGame(Guid.Parse(textBox.Tag.ToString()), mult));
             }
         }
 
@@ -63,7 +63,7 @@ namespace WheelSpinner
             var button = sender as Button;
             if(button==null)
                 return;
-            _excludedGames.Add(Guid.Parse(button.Tag.ToString()));
+            ExcludedGames.Add(Guid.Parse(button.Tag.ToString()));
             InsertGamesIntoExtenders();
         }
 
@@ -72,7 +72,7 @@ namespace WheelSpinner
             var button = sender as Button;
             if (button == null)
                 return;
-            _excludedGames.Remove(Guid.Parse(button.Tag.ToString()));
+            ExcludedGames.Remove(Guid.Parse(button.Tag.ToString()));
             InsertGamesIntoExtenders();
         }
 
@@ -100,7 +100,7 @@ namespace WheelSpinner
             var addButton = TryFindResource("AddButton") as Style;
             foreach (var game in _games)
             {
-                if (!_excludedGames.Contains(game.Id))
+                if (!ExcludedGames.Contains(game.Id))
                 {
                     var grid = new Grid
                     {

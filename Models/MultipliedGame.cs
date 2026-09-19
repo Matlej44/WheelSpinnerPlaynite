@@ -3,7 +3,7 @@ using Playnite.SDK.Models;
 
 namespace WheelSpinner.Models
 {
-    class MultipliedGame
+    public class MultipliedGame
     {
         public Guid  GameId { get; set; }
         public int Multiplier { get; set; }
