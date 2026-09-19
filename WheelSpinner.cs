@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace WheelSpinner
@@ -34,9 +35,28 @@ namespace WheelSpinner
         {
             yield return new MainMenuItem
             {
-                Description = "Name of main menu item",
-                Action = (gargs) => Api.Dialogs.ShowMessage("Clicked messege", "Clicked")
+                Description = "Spin the Wheel",
+                Action = (gargs) => CreateWindow()
             };
+        }
+
+        private void CreateWindow()
+        {
+            var window = Api.Dialogs.CreateWindow(new WindowCreationOptions
+            {
+                ShowMinimizeButton = false,
+                ShowMaximizeButton = false
+            });
+            window.ResizeMode = ResizeMode.NoResize;
+            window.Height = 500;
+            window.Width = 700;
+
+            window.Content = new SpinWheelWindow(api: Api);
+
+            window.Owner = Api.Dialogs.GetCurrentAppWindow();
+            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            
+            window.ShowDialog();
         }
         
         public override void OnGameInstalled(OnGameInstalledEventArgs args)
