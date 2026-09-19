@@ -97,28 +97,10 @@
             <StackPanel Margin="5,0">
                 <Expander Header="Active" IsExpanded="True" Style="{StaticResource SectionExpander}">
                     <StackPanel Name="Active">
-                        <Grid Style="{StaticResource ItemRow}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Tomb Raider" VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1" Text="1" Style="{StaticResource WeightBox}" PreviewTextInput="UIElement_OnPreviewTextInput"/>
-                            <Button Grid.Column="2" Style="{StaticResource ExcludeButton}" Content="−"/>
-                        </Grid>
                     </StackPanel>
                 </Expander>
                 <Expander Header="Excluded" IsExpanded="True" Style="{StaticResource SectionExpander}">
                     <StackPanel Name="Excluded">
-                        <Grid Style="{StaticResource ItemRow}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Alan Wake" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Style="{StaticResource AddButton}" Name="GameName" Content="+"/>
-                        </Grid>
                     </StackPanel>
                 </Expander>
             </StackPanel>

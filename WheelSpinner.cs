@@ -47,9 +47,10 @@ namespace WheelSpinner
                 ShowMinimizeButton = false,
                 ShowMaximizeButton = false
             });
-            window.ResizeMode = ResizeMode.NoResize;
-            window.Height = 500;
-            window.Width = 700;
+            window.ResizeMode = ResizeMode.CanResize;
+            window.SizeToContent = SizeToContent.Width;
+            window.MinHeight = 500;
+            window.MinWidth = 700;
 
             window.Content = new SpinWheelWindow(api: Api);
 
