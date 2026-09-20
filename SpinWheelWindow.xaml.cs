@@ -110,14 +110,7 @@ namespace WheelSpinner
         {
             if (!(sender is CheckBox checkbox))
                 return;
-            if (checkbox.IsChecked == true)
-            {
-                _games = Api.Database.Games.ToList();
-            }
-            else
-            {
-                _games = Api.MainView.FilteredGames;
-            }
+            _games = checkbox.IsChecked == true ? Api.MainView.FilteredGames : Api.Database.Games.ToList();
             InsertGamesIntoExtenders();
         }
         
