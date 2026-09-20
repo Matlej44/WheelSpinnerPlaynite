@@ -87,7 +87,7 @@
             </Grid.RowDefinitions>
             <Border Grid.Row="0" Style="{StaticResource SideLabelBorder}">
                 <StackPanel Orientation="Horizontal">
-                    <CheckBox Click="CheckboxChanged" IsChecked="True" Margin="0 0 2 0 ">Filtered</CheckBox>
+                    <CheckBox Click="CheckboxChanged" IsChecked="True" Margin="0 0 2 0 " Name="FilteredBox">Filtered</CheckBox>
                     <Button Click="ResetPresetButton">Reset Preset</Button>
                 </StackPanel>
             </Border>

@@ -16,18 +16,14 @@ namespace WheelSpinner
     public partial class SpinWheelWindow : UserControl
     {
         private IPlayniteAPI Api { get; set; }
-        private List<Game> _games;
-        private readonly List<Guid> _excludedGames = new List<Guid>();
+        private List<Game> _games = new List<Game>();
+        private readonly HashSet<Guid> _excludedGames = new HashSet<Guid>();
         private readonly List<MultipliedGame> _multipliedGames = new List<MultipliedGame>();
+        private bool _isCheckboxChecked = true;
 
         public SpinWheelWindow(IPlayniteAPI api, SaveState saveState = null)
         {
             InitializeComponent();
-            if (saveState != null)
-            {
-                _multipliedGames = saveState.MultipliedGames;
-                _excludedGames = saveState.ExcludedGames;
-            }
             if (Application.Current.TryFindResource("TextBlockBaseStyle") is Style textBlockStyle)
             {
                 var newStyle = new Style(typeof(TextBlock), textBlockStyle);
@@ -35,7 +31,17 @@ namespace WheelSpinner
             }
 
             Api = api;
-            _games = Api.MainView.FilteredGames;
+            if (saveState != null)
+            {
+                _multipliedGames = saveState.MultipliedGames;
+                _excludedGames = saveState.ExcludedGames;
+                _isCheckboxChecked = saveState.IsCheckboxChecked;
+            }
+            ChangeGamesList(_isCheckboxChecked);
+            if (FilteredBox != null && FilteredBox.IsChecked != _isCheckboxChecked)
+            {
+                FilteredBox.IsChecked = _isCheckboxChecked;
+            }
             InsertGamesIntoExtenders();
             SizeChanged += MainWindow_SizeChanged;
         }
@@ -110,8 +116,24 @@ namespace WheelSpinner
         {
             if (!(sender is CheckBox checkbox))
                 return;
-            _games = checkbox.IsChecked == true ? Api.MainView.FilteredGames : Api.Database.Games.ToList();
+            if (checkbox.IsChecked == null)
+                return;
+            ChangeGamesList(checkbox.IsChecked==true);
             InsertGamesIntoExtenders();
+        }
+
+        private void ChangeGamesList(bool isChecked)
+        {
+            if (isChecked)
+            {
+                _games = Api.MainView.FilteredGames;
+                _isCheckboxChecked = true;
+            }
+            else
+            {
+                _games = Api.Database.Games.ToList();
+                _isCheckboxChecked = false;
+            }
         }
         
         private void InsertGamesIntoExtenders()
@@ -223,7 +245,7 @@ namespace WheelSpinner
 
         public SaveState GetSaveState()
         {
-            return new SaveState(_multipliedGames, _excludedGames);
+            return new SaveState(_multipliedGames, _excludedGames, _isCheckboxChecked);
         }
     }
 }
