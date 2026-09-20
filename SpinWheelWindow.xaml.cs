@@ -45,16 +45,41 @@ namespace WheelSpinner
         }
         private void UIElement_OnPreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = new Regex("[^0-9]+").IsMatch(e.Text);
-            if (e.Handled)
-                return;
             var textBox = sender as TextBox;
             if (textBox == null)
                 return;
-            var mult = int.Parse(textBox.Text);
-            if (mult > 1)
+            
+            var fullText = textBox.Text.Remove(textBox.SelectionStart, textBox.SelectionLength)
+                .Insert(textBox.SelectionStart, e.Text);
+            
+            var isValid = Regex.IsMatch(fullText, @"^[1-9][0-9]{0,2}$");
+            
+            e.Handled = !isValid;
+        }
+
+        private void UIElement_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (textBox == null||string.IsNullOrEmpty(textBox.Text))
+                return;
+            if(!Guid.TryParse(textBox.Tag.ToString(), out var gameId))
+                return;
+            if (int.TryParse(textBox.Text, out var multiplier))
             {
-                MultipliedGames.Add(new MultipliedGame(Guid.Parse(textBox.Tag.ToString()), mult));
+                var game = MultipliedGames.FirstOrDefault(x => x.GameId == gameId);
+                if (game != null)
+                {
+                    if (multiplier == 1)
+                    {
+                        MultipliedGames.Remove(game);
+                        return;
+                    }
+                    game.Multiplier = multiplier;
+                }
+                else if (multiplier > 1)
+                {
+                    MultipliedGames.Add(new MultipliedGame(gameId, multiplier));
+                }
             }
         }
 
@@ -88,6 +113,7 @@ namespace WheelSpinner
             {
                 _games = Api.MainView.FilteredGames;
             }
+            InsertGamesIntoExtenders();
         }
         
         private void InsertGamesIntoExtenders()
@@ -118,11 +144,12 @@ namespace WheelSpinner
                     Grid.SetColumn(textBlock, 0);
                     var textBox = new TextBox
                     {
-                        Text = "1",
+                        Text = $"{MultipliedGames.FirstOrDefault(x => x.GameId == game.Id)?.Multiplier ?? 1}",
                         Style = styleTextBox,
                         Tag = game.Id.ToString()
                     };
                     textBox.PreviewTextInput += UIElement_OnPreviewTextInput;
+                    textBox.TextChanged += UIElement_OnTextChanged;
                     Grid.SetColumn(textBox, 1);
                     var button = new Button
                     {
@@ -187,6 +214,13 @@ namespace WheelSpinner
             style.Setters.Add(new Setter(MarginProperty, new Thickness(8, 0, 8, 0)));
             return style;
         }
-        
+
+        private void ResetPresetButton(object sender, RoutedEventArgs e)
+        {
+            MultipliedGames.Clear();
+            ExcludedGames.Clear();
+            InsertGamesIntoExtenders();
+            Api.Dialogs.ShowMessage("Preset has been reset.", "Reset");
+        }
     }
 }
