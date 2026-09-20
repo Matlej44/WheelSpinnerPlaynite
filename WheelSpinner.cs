@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using WheelSpinner.Models;
 
 namespace WheelSpinner
 {
@@ -44,21 +45,43 @@ namespace WheelSpinner
         {
             var window = Api.Dialogs.CreateWindow(new WindowCreationOptions
             {
-                ShowMinimizeButton = false,
-                ShowMaximizeButton = false
+                ShowMinimizeButton = false
             });
+            var saveState = LoadPluginSettings<SaveState>();
             window.ResizeMode = ResizeMode.CanResize;
             window.SizeToContent = SizeToContent.Width;
             window.MinHeight = 500;
             window.MinWidth = 700;
 
-            window.Content = new SpinWheelWindow(api: Api);
-
+            var windowContent = new SpinWheelWindow(api: Api, saveState);
+            window.Content = windowContent;
+            
             window.Owner = Api.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            window.Closed += OnWindowClosed;
             
             
             window.ShowDialog();
+        }
+
+        public void OnWindowClosed(object sender, EventArgs e)
+        {
+            
+            try
+            {
+                if (sender is Window window && window.Content is SpinWheelWindow windowContent)
+                {
+                    var save = windowContent.GetSaveState();
+                    if (save != null)
+                    {
+                        SavePluginSettings(save);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.Error(exception, "Failed to save settings on window close.");
+            }
         }
         
         

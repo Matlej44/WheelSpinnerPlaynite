@@ -17,12 +17,17 @@ namespace WheelSpinner
     {
         private IPlayniteAPI Api { get; set; }
         private List<Game> _games;
-        public readonly List<Guid> ExcludedGames = new List<Guid>();
-        public readonly List<MultipliedGame> MultipliedGames = new List<MultipliedGame>();
+        private readonly List<Guid> _excludedGames = new List<Guid>();
+        private readonly List<MultipliedGame> _multipliedGames = new List<MultipliedGame>();
 
-        public SpinWheelWindow(IPlayniteAPI api)
+        public SpinWheelWindow(IPlayniteAPI api, SaveState saveState = null)
         {
             InitializeComponent();
+            if (saveState != null)
+            {
+                _multipliedGames = saveState.MultipliedGames;
+                _excludedGames = saveState.ExcludedGames;
+            }
             if (Application.Current.TryFindResource("TextBlockBaseStyle") is Style textBlockStyle)
             {
                 var newStyle = new Style(typeof(TextBlock), textBlockStyle);
@@ -66,19 +71,19 @@ namespace WheelSpinner
                 return;
             if (int.TryParse(textBox.Text, out var multiplier))
             {
-                var game = MultipliedGames.FirstOrDefault(x => x.GameId == gameId);
+                var game = _multipliedGames.FirstOrDefault(x => x.GameId == gameId);
                 if (game != null)
                 {
                     if (multiplier == 1)
                     {
-                        MultipliedGames.Remove(game);
+                        _multipliedGames.Remove(game);
                         return;
                     }
                     game.Multiplier = multiplier;
                 }
                 else if (multiplier > 1)
                 {
-                    MultipliedGames.Add(new MultipliedGame(gameId, multiplier));
+                    _multipliedGames.Add(new MultipliedGame(gameId, multiplier));
                 }
             }
         }
@@ -88,7 +93,7 @@ namespace WheelSpinner
             var button = sender as Button;
             if(button==null)
                 return;
-            ExcludedGames.Add(Guid.Parse(button.Tag.ToString()));
+            _excludedGames.Add(Guid.Parse(button.Tag.ToString()));
             InsertGamesIntoExtenders();
         }
 
@@ -97,7 +102,7 @@ namespace WheelSpinner
             var button = sender as Button;
             if (button == null)
                 return;
-            ExcludedGames.Remove(Guid.Parse(button.Tag.ToString()));
+            _excludedGames.Remove(Guid.Parse(button.Tag.ToString()));
             InsertGamesIntoExtenders();
         }
 
@@ -126,7 +131,7 @@ namespace WheelSpinner
             var addButton = TryFindResource("AddButton") as Style;
             foreach (var game in _games)
             {
-                if (!ExcludedGames.Contains(game.Id))
+                if (!_excludedGames.Contains(game.Id))
                 {
                     var grid = new Grid
                     {
@@ -144,7 +149,7 @@ namespace WheelSpinner
                     Grid.SetColumn(textBlock, 0);
                     var textBox = new TextBox
                     {
-                        Text = $"{MultipliedGames.FirstOrDefault(x => x.GameId == game.Id)?.Multiplier ?? 1}",
+                        Text = $"{_multipliedGames.FirstOrDefault(x => x.GameId == game.Id)?.Multiplier ?? 1}",
                         Style = styleTextBox,
                         Tag = game.Id.ToString()
                     };
@@ -217,10 +222,15 @@ namespace WheelSpinner
 
         private void ResetPresetButton(object sender, RoutedEventArgs e)
         {
-            MultipliedGames.Clear();
-            ExcludedGames.Clear();
+            _multipliedGames.Clear();
+            _excludedGames.Clear();
             InsertGamesIntoExtenders();
             Api.Dialogs.ShowMessage("Preset has been reset.", "Reset");
+        }
+
+        public SaveState GetSaveState()
+        {
+            return new SaveState(_multipliedGames, _excludedGames);
         }
     }
 }
