@@ -14,6 +14,7 @@ using System.Drawing;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Drawing.Brushes;
 using Color = System.Windows.Media.Color;
+using FontFamily = System.Windows.Media.FontFamily;
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
 
@@ -81,6 +82,18 @@ namespace WheelSpinner
             }
         }
 
+        private async void DrawWheelAsync()
+        {
+            try
+            {
+                await Dispatcher.InvokeAsync(DrawWheel);
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Failed to draw wheel.");
+            }
+        }
+
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (e.HeightChanged)
@@ -89,7 +102,7 @@ namespace WheelSpinner
                 WheelCanvas.Height = e.NewSize.Height - 100;
                 WheelRotation.CenterX = WheelCanvas.Width / 2;
                 WheelRotation.CenterY = WheelCanvas.Height / 2;
-                DrawWheel();
+                DrawWheelAsync();
             }
         }
 
@@ -122,7 +135,7 @@ namespace WheelSpinner
                     if (multiplier == 1)
                     {
                         _multipliedGames.Remove(gameId);
-                        DrawWheel();
+                        DrawWheelAsync();
                         return;
                     }
 
@@ -133,7 +146,7 @@ namespace WheelSpinner
                     _multipliedGames.Add(gameId, multiplier);
                 }
 
-                DrawWheel();
+                DrawWheelAsync();
             }
         }
 
@@ -207,7 +220,7 @@ namespace WheelSpinner
             Active.Visibility = Visibility.Visible;
             Excluded.Visibility = Visibility.Visible;
 
-            DrawWheel();
+            DrawWheelAsync();
         }
 
         private Grid CreateActiveRow(Style style, Style styleTextBox, Style excludedStyle, Game game)
@@ -320,10 +333,8 @@ namespace WheelSpinner
         {
             return _multipliedGames.TryGetValue(game.Id, out var weight) ? weight : 1;
         }
-        
-        
-        
-        
+
+
         private void DrawWheel()
         {
             WheelCanvas.Children.Clear();
@@ -343,7 +354,8 @@ namespace WheelSpinner
                 var sliceAngle = (_wheelItems[i].Weight / total) * 360;
                 var startAngle = cursor;
                 var endAngle = cursor + sliceAngle;
-                WheelCanvas.Children.Add(CreateSlice(cx, cy, radius, startAngle, endAngle, _palette[i%_palette.Count]));
+                WheelCanvas.Children.Add(
+                    CreateSlice(cx, cy, radius, startAngle, endAngle, _palette[i % _palette.Count]));
                 if (sliceAngle >= minAngleForLabel)
                 {
                     var label = CreateLabel(_wheelItems[i].Game.Name, cx, cy, radius, startAngle, sliceAngle);
@@ -352,7 +364,6 @@ namespace WheelSpinner
                         WheelCanvas.Children.Add(label);
                     }
                 }
-                WheelCanvas.Children.Add(CreateLabel(_wheelItems[i].Game.Name, cx, cy, radius, startAngle, sliceAngle));
                 cursor = endAngle;
             }
         }
@@ -384,27 +395,51 @@ namespace WheelSpinner
         private TextBlock CreateLabel(string text, double cx, double cy, double radius, double startAngle,
             double sliceAngle)
         {
-            var midAngle = startAngle + (sliceAngle / 2);
-            var labelRadius = radius * 0.62;
-            Point labelPoint = PointOnCircle(cx, cy, labelRadius,  midAngle);
-            var maxWidth = 2*labelRadius*Math.Sin((sliceAngle*Math.PI/180)/2)*0.9;
-            maxWidth = Math.Min(maxWidth, 20);
-            
+            double midAngle = startAngle + sliceAngle / 2;
+
+            double innerRadius = radius * 0.22;
+            double outerRadius = radius * 0.92;
+            double maxWidth = outerRadius - innerRadius;
+            double midRadius = (innerRadius + outerRadius) / 2;
+
             var tb = new TextBlock
             {
                 Text = text,
                 Foreground = new SolidColorBrush(Colors.White),
-                TextAlignment = TextAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                FontSize = 12,
                 FontWeight = FontWeights.Bold,
+                FontFamily = new FontFamily("Segoe UI Semibold"),
+                FontSize = Math.Max(11, radius * 0.06),
                 MaxWidth = maxWidth,
-                TextTrimming = TextTrimming.CharacterEllipsis
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                TextAlignment = TextAlignment.Center,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 3,
+                    ShadowDepth = 0,
+                    Opacity = 0.9
+                }
             };
-            tb.RenderTransformOrigin = new Point(0, 0);
-            tb.RenderTransform = new RotateTransform(midAngle+90);
-            Canvas.SetLeft(tb, labelPoint.X);
-            Canvas.SetTop(tb, labelPoint.Y);
+            
+            Point anchor = PointOnCircle(cx, cy, midRadius, midAngle);
+
+            tb.Measure(new Size(maxWidth, double.PositiveInfinity));
+            double w = Math.Min(tb.DesiredSize.Width, maxWidth);
+            double h = tb.DesiredSize.Height;
+
+            
+            Canvas.SetLeft(tb, anchor.X - w / 2);
+            Canvas.SetTop(tb, anchor.Y - h / 2);
+
+            
+            double screenAngle = midAngle - 90;
+            double normalized = ((screenAngle + 180) % 360 + 360) % 360 - 180; 
+            if (normalized > 90) normalized -= 180;
+            else if (normalized < -90) normalized += 180;
+
+            tb.RenderTransformOrigin = new Point(0.5, 0.5); 
+            tb.RenderTransform = new RotateTransform(normalized);
+
             return tb;
         }
 
