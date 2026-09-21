@@ -4,12 +4,18 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Shapes;
 using Playnite.SDK;
 using Playnite.SDK.Models;
 using WheelSpinner.Models;
-
+using System.Drawing;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Drawing.Brushes;
+using Color = System.Windows.Media.Color;
+using Point = System.Windows.Point;
+using Size = System.Windows.Size;
 
 namespace WheelSpinner
 {
@@ -22,7 +28,18 @@ namespace WheelSpinner
         private bool _isCheckboxChecked = true;
         private ILogger logger { get; set; }
 
-        public SpinWheelWindow(IPlayniteAPI api,ILogger logger, SaveState saveState = null)
+        private readonly Random _random = new Random();
+        private double _angle = 0;
+
+        private readonly List<Color> _palette = new List<Color>
+        {
+            Colors.Red, Colors.Red, Colors.OrangeRed, Colors.Orange, Colors.Yellow
+        };
+
+        private List<(Game Game, int Weight)> _wheelItems = new List<(Game Game, int Weight)>();
+
+
+        public SpinWheelWindow(IPlayniteAPI api, ILogger logger, SaveState saveState = null)
         {
             InitializeComponent();
             if (Application.Current.TryFindResource("TextBlockBaseStyle") is Style textBlockStyle)
@@ -30,6 +47,7 @@ namespace WheelSpinner
                 var newStyle = new Style(typeof(TextBlock), textBlockStyle);
                 Resources.Add(typeof(TextBlock), newStyle);
             }
+
             this.logger = logger;
 
             Api = api;
@@ -39,6 +57,7 @@ namespace WheelSpinner
                 _excludedGames = saveState.ExcludedGames;
                 _isCheckboxChecked = saveState.IsCheckboxChecked;
             }
+
             ChangeGamesList(_isCheckboxChecked);
             if (FilteredBox != null && FilteredBox.IsChecked != _isCheckboxChecked)
             {
@@ -46,7 +65,7 @@ namespace WheelSpinner
             }
 
             InsertGamesAsync();
-            
+
             SizeChanged += MainWindow_SizeChanged;
         }
 
@@ -68,28 +87,33 @@ namespace WheelSpinner
             {
                 WheelCanvas.Width = e.NewSize.Height - 100;
                 WheelCanvas.Height = e.NewSize.Height - 100;
+                WheelRotation.CenterX = WheelCanvas.Width / 2;
+                WheelRotation.CenterY = WheelCanvas.Height / 2;
+                DrawWheel();
             }
         }
+
+
         private void UIElement_OnPreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             var textBox = sender as TextBox;
             if (textBox == null)
                 return;
-            
+
             var fullText = textBox.Text.Remove(textBox.SelectionStart, textBox.SelectionLength)
                 .Insert(textBox.SelectionStart, e.Text);
-            
+
             var isValid = Regex.IsMatch(fullText, @"^[1-9][0-9]{0,2}$");
-            
+
             e.Handled = !isValid;
         }
 
         private void UIElement_OnTextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
-            if (textBox == null||string.IsNullOrEmpty(textBox.Text))
+            if (textBox == null || string.IsNullOrEmpty(textBox.Text))
                 return;
-            if(!Guid.TryParse(textBox.Tag.ToString(), out var gameId))
+            if (!Guid.TryParse(textBox.Tag.ToString(), out var gameId))
                 return;
             if (int.TryParse(textBox.Text, out var multiplier))
             {
@@ -98,21 +122,25 @@ namespace WheelSpinner
                     if (multiplier == 1)
                     {
                         _multipliedGames.Remove(gameId);
+                        DrawWheel();
                         return;
                     }
+
                     _multipliedGames[gameId] = multiplier;
                 }
                 else if (multiplier > 1)
                 {
                     _multipliedGames.Add(gameId, multiplier);
                 }
+
+                DrawWheel();
             }
         }
 
         private void ExcludeButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
-            if(button==null)
+            if (button == null)
                 return;
             _excludedGames.Add(Guid.Parse(button.Tag.ToString()));
             InsertGamesAsync();
@@ -133,7 +161,7 @@ namespace WheelSpinner
                 return;
             if (checkbox.IsChecked == null)
                 return;
-            ChangeGamesList(checkbox.IsChecked==true);
+            ChangeGamesList(checkbox.IsChecked == true);
             InsertGamesAsync();
         }
 
@@ -150,12 +178,12 @@ namespace WheelSpinner
                 _isCheckboxChecked = false;
             }
         }
-        
+
         private void InsertGamesIntoExtenders()
         {
             Active.Visibility = Visibility.Collapsed;
             Excluded.Visibility = Visibility.Collapsed;
-            
+
             Active.Children.Clear();
             Excluded.Children.Clear();
             var style = TryFindResource("ItemRow") as Style ?? CreateItemRowStyle();
@@ -175,8 +203,11 @@ namespace WheelSpinner
                     Excluded.Children.Add(grid);
                 }
             }
+
             Active.Visibility = Visibility.Visible;
             Excluded.Visibility = Visibility.Visible;
+
+            DrawWheel();
         }
 
         private Grid CreateActiveRow(Style style, Style styleTextBox, Style excludedStyle, Game game)
@@ -186,9 +217,9 @@ namespace WheelSpinner
                 Style = style
             };
             var definition = grid.ColumnDefinitions;
-            definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star)});
-            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto)});
-            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto)});
+            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
+            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
             var textBlock = new TextBlock
             {
                 Text = game.Name,
@@ -199,6 +230,7 @@ namespace WheelSpinner
             {
                 text = 1;
             }
+
             var textBox = new TextBox
             {
                 Text = $"{text}",
@@ -230,8 +262,8 @@ namespace WheelSpinner
                 Style = style
             };
             var definition = grid.ColumnDefinitions;
-            definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star)});
-            definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Auto)});
+            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
             var textBlock = new TextBlock
             {
                 Text = game.Name,
@@ -241,7 +273,7 @@ namespace WheelSpinner
             var button = new Button
             {
                 Content = "+",
-                Style = addButton, 
+                Style = addButton,
                 Tag = game.Id.ToString()
             };
             button.Click += AddButton_Click;
@@ -251,8 +283,8 @@ namespace WheelSpinner
             grid.Children.Add(button);
             return grid;
         }
-        
-        
+
+
         private static Style CreateItemRowStyle()
         {
             var style = new Style(typeof(Grid));
@@ -282,6 +314,105 @@ namespace WheelSpinner
         public SaveState GetSaveState()
         {
             return new SaveState(_multipliedGames, _excludedGames, _isCheckboxChecked);
+        }
+
+        private int GetWeight(Game game)
+        {
+            return _multipliedGames.TryGetValue(game.Id, out var weight) ? weight : 1;
+        }
+        
+        
+        
+        
+        private void DrawWheel()
+        {
+            WheelCanvas.Children.Clear();
+            _wheelItems = _games.Where(game => !_excludedGames.Contains(game.Id))
+                .Select(game => (game, GetWeight(game)))
+                .ToList();
+            if (_wheelItems.Count == 0)
+                return;
+            var radius = Math.Min(WheelCanvas.Width, WheelCanvas.Height) / 2;
+            var cx = WheelCanvas.Width / 2;
+            var cy = WheelCanvas.Height / 2;
+            double total = _wheelItems.Sum(s => s.Weight);
+            double cursor = 0;
+            const double minAngleForLabel = 12.0;
+            for (int i = 0; i < _wheelItems.Count; i++)
+            {
+                var sliceAngle = (_wheelItems[i].Weight / total) * 360;
+                var startAngle = cursor;
+                var endAngle = cursor + sliceAngle;
+                WheelCanvas.Children.Add(CreateSlice(cx, cy, radius, startAngle, endAngle, _palette[i%_palette.Count]));
+                if (sliceAngle >= minAngleForLabel)
+                {
+                    var label = CreateLabel(_wheelItems[i].Game.Name, cx, cy, radius, startAngle, sliceAngle);
+                    if (label != null)
+                    {
+                        WheelCanvas.Children.Add(label);
+                    }
+                }
+                WheelCanvas.Children.Add(CreateLabel(_wheelItems[i].Game.Name, cx, cy, radius, startAngle, sliceAngle));
+                cursor = endAngle;
+            }
+        }
+
+        private Path CreateSlice(double cx, double cy, double radius, double startAngle, double endAngle, Color color)
+        {
+            var startPoint = PointOnCircle(cx, cy, radius, startAngle);
+            var endPoint = PointOnCircle(cx, cy, radius, endAngle);
+            var isLargeArc = (endAngle - startAngle) > 180;
+            var figure = new PathFigure
+            {
+                StartPoint = new Point(cx, cy),
+                IsClosed = true
+            };
+            figure.Segments.Add(new LineSegment(startPoint, true));
+            figure.Segments.Add(new ArcSegment(endPoint, new Size(radius, radius), 0, isLargeArc,
+                SweepDirection.Clockwise, true));
+            var geometry = new PathGeometry();
+            geometry.Figures.Add(figure);
+            return new Path
+            {
+                Data = geometry,
+                Fill = new SolidColorBrush(color),
+                Stroke = new SolidColorBrush(Colors.White),
+                StrokeThickness = 1
+            };
+        }
+
+        private TextBlock CreateLabel(string text, double cx, double cy, double radius, double startAngle,
+            double sliceAngle)
+        {
+            var midAngle = startAngle + (sliceAngle / 2);
+            var labelRadius = radius * 0.62;
+            Point labelPoint = PointOnCircle(cx, cy, labelRadius,  midAngle);
+            var maxWidth = 2*labelRadius*Math.Sin((sliceAngle*Math.PI/180)/2)*0.9;
+            maxWidth = Math.Min(maxWidth, 20);
+            
+            var tb = new TextBlock
+            {
+                Text = text,
+                Foreground = new SolidColorBrush(Colors.White),
+                TextAlignment = TextAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                MaxWidth = maxWidth,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            tb.RenderTransformOrigin = new Point(0, 0);
+            tb.RenderTransform = new RotateTransform(midAngle+90);
+            Canvas.SetLeft(tb, labelPoint.X);
+            Canvas.SetTop(tb, labelPoint.Y);
+            return tb;
+        }
+
+
+        private Point PointOnCircle(double cx, double cy, double radius, double angleDegrees)
+        {
+            var rad = (Math.PI / 180) * (angleDegrees - 90);
+            return new Point((int)(cx + (radius * Math.Cos(rad))), (int)(cy + (radius * Math.Sin(rad))));
         }
     }
 }
