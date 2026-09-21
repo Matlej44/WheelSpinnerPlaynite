@@ -5,11 +5,11 @@ namespace WheelSpinner.Models
 {
     public class SaveState
     {
-        public List<MultipliedGame> MultipliedGames { get; set; }
-        public HashSet<Guid> ExcludedGames { get; set; }
+        public Dictionary<Guid, int> MultipliedGames { get; set; } = new Dictionary<Guid, int>();
+        public HashSet<Guid> ExcludedGames { get; set; } = new HashSet<Guid>();
         public bool IsCheckboxChecked { get; set; } = true;
 
-        public SaveState(List<MultipliedGame> multipliedGames, HashSet<Guid> excludedGames, bool isCheckboxChecked)
+        public SaveState(Dictionary<Guid, int> multipliedGames, HashSet<Guid> excludedGames, bool isCheckboxChecked)
         {
             MultipliedGames = multipliedGames;
             ExcludedGames = excludedGames;

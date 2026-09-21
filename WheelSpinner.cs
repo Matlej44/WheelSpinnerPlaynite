@@ -47,13 +47,21 @@ namespace WheelSpinner
             {
                 ShowMinimizeButton = false
             });
-            var saveState = LoadPluginSettings<SaveState>();
+            var saveState = new SaveState();
+            try
+            {
+                saveState = LoadPluginSettings<SaveState>();
+            }
+            catch (Exception exception)
+            {
+                logger.Error(exception, "Failed to load settings.");
+            }
             window.ResizeMode = ResizeMode.CanResize;
             window.SizeToContent = SizeToContent.Width;
             window.MinHeight = 500;
             window.MinWidth = 700;
 
-            var windowContent = new SpinWheelWindow(api: Api, saveState);
+            var windowContent = new SpinWheelWindow(api: Api,logger, saveState);
             window.Content = windowContent;
             
             window.Owner = Api.Dialogs.GetCurrentAppWindow();

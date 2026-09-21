@@ -18,10 +18,11 @@ namespace WheelSpinner
         private IPlayniteAPI Api { get; set; }
         private List<Game> _games = new List<Game>();
         private readonly HashSet<Guid> _excludedGames = new HashSet<Guid>();
-        private readonly List<MultipliedGame> _multipliedGames = new List<MultipliedGame>();
+        private readonly Dictionary<Guid, int> _multipliedGames = new Dictionary<Guid, int>();
         private bool _isCheckboxChecked = true;
+        private ILogger logger { get; set; }
 
-        public SpinWheelWindow(IPlayniteAPI api, SaveState saveState = null)
+        public SpinWheelWindow(IPlayniteAPI api,ILogger logger, SaveState saveState = null)
         {
             InitializeComponent();
             if (Application.Current.TryFindResource("TextBlockBaseStyle") is Style textBlockStyle)
@@ -29,6 +30,7 @@ namespace WheelSpinner
                 var newStyle = new Style(typeof(TextBlock), textBlockStyle);
                 Resources.Add(typeof(TextBlock), newStyle);
             }
+            this.logger = logger;
 
             Api = api;
             if (saveState != null)
@@ -42,8 +44,22 @@ namespace WheelSpinner
             {
                 FilteredBox.IsChecked = _isCheckboxChecked;
             }
-            InsertGamesIntoExtenders();
+
+            InsertGamesAsync();
+            
             SizeChanged += MainWindow_SizeChanged;
+        }
+
+        private async void InsertGamesAsync()
+        {
+            try
+            {
+                await Dispatcher.InvokeAsync(InsertGamesIntoExtenders);
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Failed to insert games into extenders.");
+            }
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -77,19 +93,18 @@ namespace WheelSpinner
                 return;
             if (int.TryParse(textBox.Text, out var multiplier))
             {
-                var game = _multipliedGames.FirstOrDefault(x => x.GameId == gameId);
-                if (game != null)
+                if (_multipliedGames.ContainsKey(gameId))
                 {
                     if (multiplier == 1)
                     {
-                        _multipliedGames.Remove(game);
+                        _multipliedGames.Remove(gameId);
                         return;
                     }
-                    game.Multiplier = multiplier;
+                    _multipliedGames[gameId] = multiplier;
                 }
                 else if (multiplier > 1)
                 {
-                    _multipliedGames.Add(new MultipliedGame(gameId, multiplier));
+                    _multipliedGames.Add(gameId, multiplier);
                 }
             }
         }
@@ -100,7 +115,7 @@ namespace WheelSpinner
             if(button==null)
                 return;
             _excludedGames.Add(Guid.Parse(button.Tag.ToString()));
-            InsertGamesIntoExtenders();
+            InsertGamesAsync();
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
@@ -109,7 +124,7 @@ namespace WheelSpinner
             if (button == null)
                 return;
             _excludedGames.Remove(Guid.Parse(button.Tag.ToString()));
-            InsertGamesIntoExtenders();
+            InsertGamesAsync();
         }
 
         private void CheckboxChanged(object sender, RoutedEventArgs e)
@@ -119,7 +134,7 @@ namespace WheelSpinner
             if (checkbox.IsChecked == null)
                 return;
             ChangeGamesList(checkbox.IsChecked==true);
-            InsertGamesIntoExtenders();
+            InsertGamesAsync();
         }
 
         private void ChangeGamesList(bool isChecked)
@@ -138,6 +153,9 @@ namespace WheelSpinner
         
         private void InsertGamesIntoExtenders()
         {
+            Active.Visibility = Visibility.Collapsed;
+            Excluded.Visibility = Visibility.Collapsed;
+            
             Active.Children.Clear();
             Excluded.Children.Clear();
             var style = TryFindResource("ItemRow") as Style ?? CreateItemRowStyle();
@@ -148,75 +166,93 @@ namespace WheelSpinner
             {
                 if (!_excludedGames.Contains(game.Id))
                 {
-                    var grid = new Grid
-                    {
-                        Style = style
-                    };
-                    var definition = grid.ColumnDefinitions;
-                    definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star)});
-                    definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto)});
-                    definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto)});
-                    var textBlock = new TextBlock
-                    {
-                        Text = game.Name,
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
-                    Grid.SetColumn(textBlock, 0);
-                    var textBox = new TextBox
-                    {
-                        Text = $"{_multipliedGames.FirstOrDefault(x => x.GameId == game.Id)?.Multiplier ?? 1}",
-                        Style = styleTextBox,
-                        Tag = game.Id.ToString()
-                    };
-                    textBox.PreviewTextInput += UIElement_OnPreviewTextInput;
-                    textBox.TextChanged += UIElement_OnTextChanged;
-                    Grid.SetColumn(textBox, 1);
-                    var button = new Button
-                    {
-                        Content = "-",
-                        Style = excludedStyle,
-                        Tag = game.Id.ToString()
-                    };
-                    button.Click += ExcludeButton_Click;
-                    Grid.SetColumn(button, 2);
-
-                    grid.Children.Add(textBlock);
-                    grid.Children.Add(textBox);
-                    grid.Children.Add(button);
+                    var grid = CreateActiveRow(style, styleTextBox, excludedStyle, game);
                     Active.Children.Add(grid);
                 }
                 else
                 {
-                    var grid = new Grid
-                    {
-                        Style = style
-                    };
-                    var definition = grid.ColumnDefinitions;
-                    definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star)});
-                    definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Auto)});
-                    var textBlock = new TextBlock
-                    {
-                        Text = game.Name,
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
-                    Grid.SetColumn(textBlock, 0);
-                    var button = new Button
-                    {
-                        Content = "+",
-                        Style = addButton, 
-                        Tag = game.Id.ToString()
-                    };
-                    button.Click += AddButton_Click;
-                    Grid.SetColumn(button, 1);
-
-                    grid.Children.Add(textBlock);
-                    grid.Children.Add(button);
+                    var grid = CreateExcludedRow(style, addButton, game);
                     Excluded.Children.Add(grid);
                 }
             }
+            Active.Visibility = Visibility.Visible;
+            Excluded.Visibility = Visibility.Visible;
         }
 
+        private Grid CreateActiveRow(Style style, Style styleTextBox, Style excludedStyle, Game game)
+        {
+            var grid = new Grid
+            {
+                Style = style
+            };
+            var definition = grid.ColumnDefinitions;
+            definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star)});
+            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto)});
+            definition.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto)});
+            var textBlock = new TextBlock
+            {
+                Text = game.Name,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(textBlock, 0);
+            if (!_multipliedGames.TryGetValue(game.Id, out var text))
+            {
+                text = 1;
+            }
+            var textBox = new TextBox
+            {
+                Text = $"{text}",
+                Style = styleTextBox,
+                Tag = game.Id.ToString()
+            };
+            textBox.PreviewTextInput += UIElement_OnPreviewTextInput;
+            textBox.TextChanged += UIElement_OnTextChanged;
+            Grid.SetColumn(textBox, 1);
+            var button = new Button
+            {
+                Content = "-",
+                Style = excludedStyle,
+                Tag = game.Id.ToString()
+            };
+            button.Click += ExcludeButton_Click;
+            Grid.SetColumn(button, 2);
 
+            grid.Children.Add(textBlock);
+            grid.Children.Add(textBox);
+            grid.Children.Add(button);
+            return grid;
+        }
+
+        private Grid CreateExcludedRow(Style style, Style addButton, Game game)
+        {
+            var grid = new Grid
+            {
+                Style = style
+            };
+            var definition = grid.ColumnDefinitions;
+            definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Star)});
+            definition.Add(new ColumnDefinition {Width = new GridLength(1, GridUnitType.Auto)});
+            var textBlock = new TextBlock
+            {
+                Text = game.Name,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(textBlock, 0);
+            var button = new Button
+            {
+                Content = "+",
+                Style = addButton, 
+                Tag = game.Id.ToString()
+            };
+            button.Click += AddButton_Click;
+            Grid.SetColumn(button, 1);
+
+            grid.Children.Add(textBlock);
+            grid.Children.Add(button);
+            return grid;
+        }
+        
+        
         private static Style CreateItemRowStyle()
         {
             var style = new Style(typeof(Grid));
