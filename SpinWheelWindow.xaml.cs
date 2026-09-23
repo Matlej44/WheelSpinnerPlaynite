@@ -10,9 +10,7 @@ using System.Windows.Shapes;
 using Playnite.SDK;
 using Playnite.SDK.Models;
 using WheelSpinner.Models;
-using System.Drawing;
-using Brush = System.Windows.Media.Brush;
-using Brushes = System.Drawing.Brushes;
+using System.Windows.Media.Animation;
 using Color = System.Windows.Media.Color;
 using FontFamily = System.Windows.Media.FontFamily;
 using Point = System.Windows.Point;
@@ -366,6 +364,7 @@ namespace WheelSpinner
                         WheelCanvas.Children.Add(label);
                     }
                 }
+
                 cursor = endAngle;
             }
         }
@@ -409,7 +408,7 @@ namespace WheelSpinner
             var minFontSize = Math.Max(8, radius * 0.03);
             var maxFontSize = radius * 0.09;
             var fontSize = Math.Min(Math.Max(scaledFontSize, minFontSize), maxFontSize);
-            
+
 
             var tb = new TextBlock
             {
@@ -429,24 +428,24 @@ namespace WheelSpinner
                     Opacity = 0.9
                 }
             };
-            
+
             Point anchor = PointOnCircle(cx, cy, midRadius, midAngle);
 
             tb.Measure(new Size(maxWidth, double.PositiveInfinity));
             double w = Math.Min(tb.DesiredSize.Width, maxWidth);
             double h = tb.DesiredSize.Height;
 
-            
+
             Canvas.SetLeft(tb, anchor.X - w / 2);
             Canvas.SetTop(tb, anchor.Y - h / 2);
 
-            
+
             double screenAngle = midAngle - 90;
-            double normalized = ((screenAngle + 180) % 360 + 360) % 360 - 180; 
+            double normalized = ((screenAngle + 180) % 360 + 360) % 360 - 180;
             if (normalized > 90) normalized -= 180;
             else if (normalized < -90) normalized += 180;
 
-            tb.RenderTransformOrigin = new Point(0.5, 0.5); 
+            tb.RenderTransformOrigin = new Point(0.5, 0.5);
             tb.RenderTransform = new RotateTransform(normalized);
 
             return tb;
@@ -457,6 +456,63 @@ namespace WheelSpinner
         {
             var rad = (Math.PI / 180) * (angleDegrees - 90);
             return new Point((int)(cx + (radius * Math.Cos(rad))), (int)(cy + (radius * Math.Sin(rad))));
+        }
+
+        private void Spin()
+        {
+            if (!_wheelItems.Any())
+            {
+                Api.Dialogs.ShowMessage("No games to spin.", "Error");
+                return;
+            }
+            var total = _wheelItems.Sum(s => s.Weight);
+            var roll = _random.NextDouble()*total;
+            var cumulative = 0.0;
+            var winningIndex = 0;
+            double winStart = 0;
+            double winAngle = 0;
+            for (var i = 0; i < _wheelItems.Count; i++)
+            {
+                var sliceAngle = (_wheelItems[i].Weight / (double) total)*360;
+                if (roll <= cumulative + _wheelItems[i].Weight)
+                {
+                    winningIndex = i;
+                    winStart = (cumulative/total)*360;
+                    winAngle = sliceAngle;
+                    break;
+                }
+                cumulative += _wheelItems[i].Weight;
+            }
+
+            var targetSliceCenter = winStart + winAngle / 2;
+            var jitter = (_random.NextDouble()-0.5)*winAngle*0.6;
+
+            var fullspin = 5 + _random.Next(3);
+             
+            var finalAngle = _angle + fullspin * 360 + (360 - targetSliceCenter) + jitter;
+
+            var animation = new DoubleAnimation
+            {
+                From = _angle,
+                To = finalAngle,
+                Duration = new Duration(TimeSpan.FromSeconds(fullspin)),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            };
+            var winner = _wheelItems[winningIndex].Game;
+            SpinButton.IsEnabled = false;
+
+            animation.Completed += (sender, args) =>
+            {
+                SpinButton.IsEnabled = true;
+                SpinCompleted?.Invoke(winner);
+            };
+            
+            WheelRotation.BeginAnimation(RotateTransform.AngleProperty, animation);
+        }
+
+        private void SpinButtonClick(object sender, RoutedEventArgs e)
+        {
+            Spin();
         }
     }
 }
