@@ -93,12 +93,20 @@
                 </StackPanel>
             </Border>
             <Border Grid.Row="1" Style="{StaticResource SideLabelBorder}">
-                <Canvas Name="WheelCanvas" Width="400" Height="400" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Canvas.RenderTransform>
-                        <RotateTransform x:Name="WheelRotation" Angle="0" CenterX="200" CenterY="200"></RotateTransform>
-                    </Canvas.RenderTransform>
-                </Canvas>
+                <Grid>
+                    <Canvas Name="WheelCanvas" Width="400" Height="400" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Canvas.RenderTransform>
+                            <RotateTransform x:Name="WheelRotation" Angle="0" CenterX="200" CenterY="200"></RotateTransform>
+                        </Canvas.RenderTransform>
+                    </Canvas>
+                    <Path Data="M -12,0 L 12,0 L 0,25 Z" Fill="DarkRed" HorizontalAlignment="Center" VerticalAlignment="Top" >
+                        <Path.RenderTransform>
+                            <TranslateTransform X="0" Y="-10"></TranslateTransform>
+                        </Path.RenderTransform>
+                    </Path>
+                </Grid>
             </Border>
+            
         </Grid>
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="10,0,0,0">
             <StackPanel Margin="5,0">

@@ -508,6 +508,7 @@ namespace WheelSpinner
             };
             
             WheelRotation.BeginAnimation(RotateTransform.AngleProperty, animation);
+            _angle = finalAngle;
         }
 
         private void SpinButtonClick(object sender, RoutedEventArgs e)
