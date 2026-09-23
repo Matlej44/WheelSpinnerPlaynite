@@ -39,6 +39,8 @@ namespace WheelSpinner
 
         private List<(Game Game, int Weight)> _wheelItems = new List<(Game Game, int Weight)>();
 
+        public event Action<Game> SpinCompleted;
+
 
         public SpinWheelWindow(IPlayniteAPI api, ILogger logger, SaveState saveState = null)
         {
@@ -348,8 +350,8 @@ namespace WheelSpinner
             var cy = WheelCanvas.Height / 2;
             double total = _wheelItems.Sum(s => s.Weight);
             double cursor = 0;
-            const double minAngleForLabel = 12.0;
-            for (int i = 0; i < _wheelItems.Count; i++)
+            const double minAngleForLabel = 2.5;
+            for (var i = 0; i < _wheelItems.Count; i++)
             {
                 var sliceAngle = (_wheelItems[i].Weight / total) * 360;
                 var startAngle = cursor;
@@ -395,12 +397,19 @@ namespace WheelSpinner
         private TextBlock CreateLabel(string text, double cx, double cy, double radius, double startAngle,
             double sliceAngle)
         {
-            double midAngle = startAngle + sliceAngle / 2;
+            var midAngle = startAngle + sliceAngle / 2;
 
-            double innerRadius = radius * 0.22;
-            double outerRadius = radius * 0.92;
-            double maxWidth = outerRadius - innerRadius;
-            double midRadius = (innerRadius + outerRadius) / 2;
+            var innerRadius = radius * 0.22;
+            var outerRadius = radius * 0.92;
+            var maxWidth = outerRadius - innerRadius;
+            var midRadius = (innerRadius + outerRadius) / 2;
+            var baseFontSize = radius * 0.06;
+            var scaledFontSize = baseFontSize * (sliceAngle / 30);
+
+            var minFontSize = Math.Max(8, radius * 0.03);
+            var maxFontSize = radius * 0.09;
+            var fontSize = Math.Min(Math.Max(scaledFontSize, minFontSize), maxFontSize);
+            
 
             var tb = new TextBlock
             {
@@ -408,7 +417,7 @@ namespace WheelSpinner
                 Foreground = new SolidColorBrush(Colors.White),
                 FontWeight = FontWeights.Bold,
                 FontFamily = new FontFamily("Segoe UI Semibold"),
-                FontSize = Math.Max(11, radius * 0.06),
+                FontSize = fontSize,
                 MaxWidth = maxWidth,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Center,

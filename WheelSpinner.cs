@@ -67,11 +67,18 @@ namespace WheelSpinner
             window.Owner = Api.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             window.Closed += OnWindowClosed;
-            
+            windowContent.SpinCompleted += (game) =>
+            {
+                OnSpinCompleted(game, window);
+            };
             
             window.ShowDialog();
         }
 
+        private void OnSpinCompleted(Game game, Window window)
+        {
+            
+        }
         public void OnWindowClosed(object sender, EventArgs e)
         {
             
