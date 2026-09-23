@@ -66,8 +66,7 @@ namespace WheelSpinner
             }
 
             InsertGamesAsync();
-
-            SizeChanged += MainWindow_SizeChanged;
+            
         }
 
         private async void InsertGamesAsync()
@@ -93,18 +92,7 @@ namespace WheelSpinner
                 logger.Error(e, "Failed to draw wheel.");
             }
         }
-
-        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (e.HeightChanged)
-            {
-                WheelCanvas.Width = e.NewSize.Height - 100;
-                WheelCanvas.Height = e.NewSize.Height - 100;
-                WheelRotation.CenterX = WheelCanvas.Width / 2;
-                WheelRotation.CenterY = WheelCanvas.Height / 2;
-                DrawWheelAsync();
-            }
-        }
+        
 
 
         private void UIElement_OnPreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -182,7 +170,7 @@ namespace WheelSpinner
         {
             if (isChecked)
             {
-                _games = Api.MainView.FilteredGames;
+                _games = Api.MainView.FilteredGames.ToList();
                 _isCheckboxChecked = true;
             }
             else
@@ -465,31 +453,40 @@ namespace WheelSpinner
                 Api.Dialogs.ShowMessage("No games to spin.", "Error");
                 return;
             }
+
             var total = _wheelItems.Sum(s => s.Weight);
-            var roll = _random.NextDouble()*total;
+            var roll = _random.NextDouble() * total;
             var cumulative = 0.0;
             var winningIndex = 0;
             double winStart = 0;
             double winAngle = 0;
             for (var i = 0; i < _wheelItems.Count; i++)
             {
-                var sliceAngle = (_wheelItems[i].Weight / (double) total)*360;
+                var sliceAngle = (_wheelItems[i].Weight / (double)total) * 360;
                 if (roll <= cumulative + _wheelItems[i].Weight)
                 {
                     winningIndex = i;
-                    winStart = (cumulative/total)*360;
+                    winStart = (cumulative / total) * 360;
                     winAngle = sliceAngle;
                     break;
                 }
+
                 cumulative += _wheelItems[i].Weight;
             }
 
             var targetSliceCenter = winStart + winAngle / 2;
-            var jitter = (_random.NextDouble()-0.5)*winAngle*0.6;
+            var jitter = (_random.NextDouble() - 0.5) * winAngle * 0.6;
 
             var fullspin = 5 + _random.Next(3);
-             
-            var finalAngle = _angle + fullspin * 360 + (360 - targetSliceCenter) + jitter;
+
+            
+            var baseTarget = ((360 - targetSliceCenter) % 360 + 360) % 360;
+            var desiredMod = ((baseTarget + jitter) % 360 + 360) % 360;
+
+           
+            var forwardDelta = ((desiredMod - _angle) % 360 + 360) % 360;
+
+            var finalAngle = _angle + forwardDelta + fullspin * 360;
 
             var animation = new DoubleAnimation
             {
@@ -503,12 +500,15 @@ namespace WheelSpinner
 
             animation.Completed += (sender, args) =>
             {
+                _angle = finalAngle % 360;
                 SpinButton.IsEnabled = true;
+                logger.Info($"Spin result winner={winner.Name} roll={roll} winningIndex={winningIndex} " +
+                            $"winStart={winStart} winAngle={winAngle} finalAngle%360={_angle} fullspin={fullspin} " +
+                            $"jitter={jitter} targetCenter={targetSliceCenter}");
                 SpinCompleted?.Invoke(winner);
             };
-            
+
             WheelRotation.BeginAnimation(RotateTransform.AngleProperty, animation);
-            _angle = finalAngle;
         }
 
         private void SpinButtonClick(object sender, RoutedEventArgs e)

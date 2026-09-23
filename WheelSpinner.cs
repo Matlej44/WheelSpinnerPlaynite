@@ -57,12 +57,21 @@ namespace WheelSpinner
                 logger.Error(exception, "Failed to load settings.");
             }
             window.ResizeMode = ResizeMode.CanResize;
-            window.SizeToContent = SizeToContent.Width;
+            window.SizeToContent = SizeToContent.Manual;
             window.MinHeight = 500;
             window.MinWidth = 700;
 
             var windowContent = new SpinWheelWindow(api: Api,logger, saveState);
             window.Content = windowContent;
+            window.StateChanged += (sender, args) =>
+            {
+                window.Dispatcher.InvokeAsync(() =>
+                {
+                    window.InvalidateMeasure();
+                    window.InvalidateArrange();
+                    window.UpdateLayout();
+                }, System.Windows.Threading.DispatcherPriority.Render);
+            };
             
             window.Owner = Api.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -71,6 +80,7 @@ namespace WheelSpinner
             {
                 OnSpinCompleted(game, window);
             };
+            
             
             window.ShowDialog();
         }
