@@ -16,6 +16,7 @@ namespace WheelSpinner
     {
         private IPlayniteAPI Api { get; set; }
         private ILogger logger { get; set; }
+
         public WinnerWindow(IPlayniteAPI api, Game winner, ILogger logger)
         {
             InitializeComponent();
@@ -31,7 +32,9 @@ namespace WheelSpinner
             else
             {
                 //We fallBack to the default cover art 
-                var path = new Uri(Path.Combine(Api.Paths.ApplicationPath, "Themes", "Desktop", "Default","Images", "custom_cover_background.png"), UriKind.Absolute);
+                var path = new Uri(
+                    Path.Combine(Api.Paths.ApplicationPath, "Themes", "Desktop", "Default", "Images",
+                        "custom_cover_background.png"), UriKind.Absolute);
                 if (File.Exists(path.LocalPath))
                 {
                     var imageFallBack = new BitmapImage
@@ -43,26 +46,25 @@ namespace WheelSpinner
                     imageFallBack.CacheOption = BitmapCacheOption.OnLoad;
                     imageFallBack.UriSource = path;
                     imageFallBack.EndInit();
-                    if(imageFallBack.CanFreeze) imageFallBack.Freeze();
+                    if (imageFallBack.CanFreeze) imageFallBack.Freeze();
                     CoverArt.Source = imageFallBack;
                 }
                 else
                 {
-                    
+                    CoverArt.Source = new WriteableBitmap((int)CoverArt.Width, (int)CoverArt.Height, 96, 96,
+                        PixelFormats.Pbgra32,
+                        null);
                 }
             }
-
-
-
         }
 
         private BitmapImage GetImage(Game game)
         {
             var cover = game.CoverImage;
-            if(string.IsNullOrEmpty(cover))
+            if (string.IsNullOrEmpty(cover))
                 return null;
             string source;
-            
+
             //CoverImage can be a URL Path or a database path
             if (cover.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
@@ -91,7 +93,7 @@ namespace WheelSpinner
                 image.CacheOption = BitmapCacheOption.OnLoad;
                 image.UriSource = new Uri(source, UriKind.Absolute);
                 image.EndInit();
-                if(image.CanFreeze) image.Freeze();
+                if (image.CanFreeze) image.Freeze();
                 return image;
             }
             catch (Exception e)
