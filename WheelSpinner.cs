@@ -87,9 +87,30 @@ namespace WheelSpinner
 
         private void OnSpinCompleted(Game game, Window window)
         {
+            window.IsEnabled = false;
+            var winnerWindow = Api.Dialogs.CreateWindow(new WindowCreationOptions
+            {
+                ShowMaximizeButton = false,
+                ShowMinimizeButton = false
+            });
+            winnerWindow.Closed += (sender, args) =>
+            {
+                window.IsEnabled = true;
+            };
+
+            var winnerContent = new WinnerWindow(api: Api, winner: game, logger: logger);
+            winnerWindow.Content = winnerContent;
             
-            Api.Dialogs.ShowMessage($"You won {game.Name}!", "Congratulations!");
+            winnerWindow.ResizeMode = ResizeMode.NoResize;
+            winnerWindow.Height = 800;
+            winnerWindow.Width = 600;
+            winnerWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            winnerWindow.Owner = window;
+
+            winnerWindow.ShowDialog();
             
+            //Api.Dialogs.ShowMessage($"You won {game.Name}!", "Congratulations!");
+
         }
         public void OnWindowClosed(object sender, EventArgs e)
         {

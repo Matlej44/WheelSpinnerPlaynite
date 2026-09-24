@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="WheelSpinner.WinnerWindow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:WheelSpinner"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="450">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Image Grid.Row="0"  Width="420" Height="560" x:Name="CoverArt">
+            </Image>
+            <Label Grid.Row="1" x:Name="GameName"></Label>
+        </Grid>
+        <Grid Grid.Row="1">
+            
+        </Grid>
+    </Grid>
+</UserControl>
