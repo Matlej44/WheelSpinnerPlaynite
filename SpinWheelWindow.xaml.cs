@@ -32,7 +32,7 @@ namespace WheelSpinner
 
         private readonly List<Color> _palette = new List<Color>
         {
-            Colors.Red, Colors.Red, Colors.OrangeRed, Colors.Orange, Colors.Yellow
+            Colors.Red, Colors.Red, Colors.OrangeRed, Colors.Orange, Colors.Yellow, Colors.YellowGreen,
         };
 
         private List<(Game Game, int Weight)> _wheelItems = new List<(Game Game, int Weight)>();
@@ -331,9 +331,14 @@ namespace WheelSpinner
                 .ToList();
             if (_wheelItems.Count == 0)
                 return;
+
             var radius = Math.Min(WheelCanvas.Width, WheelCanvas.Height) / 2;
             var cx = WheelCanvas.Width / 2;
             var cy = WheelCanvas.Height / 2;
+
+            
+            WheelCanvas.Clip = new EllipseGeometry(new Point(cx, cy), radius, radius);
+
             double total = _wheelItems.Sum(s => s.Weight);
             double cursor = 0;
             const double minAngleForLabel = 2.5;
@@ -352,9 +357,23 @@ namespace WheelSpinner
                         WheelCanvas.Children.Add(label);
                     }
                 }
-
                 cursor = endAngle;
             }
+
+            
+            var outlineRadius = radius;
+            var outline = new System.Windows.Shapes.Ellipse
+            {
+                Width = outlineRadius * 2,
+                Height = outlineRadius * 2,
+                Stroke = Brushes.White,
+                StrokeThickness = 2,
+                Fill = null,
+                IsHitTestVisible = false
+            };
+            Canvas.SetLeft(outline, cx - outlineRadius);
+            Canvas.SetTop(outline, cy - outlineRadius);
+            WheelCanvas.Children.Add(outline);
         }
 
         private Path CreateSlice(double cx, double cy, double radius, double startAngle, double endAngle, Color color)
@@ -376,8 +395,6 @@ namespace WheelSpinner
             {
                 Data = geometry,
                 Fill = new SolidColorBrush(color),
-                Stroke = new SolidColorBrush(Colors.White),
-                StrokeThickness = 1
             };
         }
 

@@ -96,6 +96,9 @@
                 <Viewbox Stretch="Uniform">
                     <Grid Width="400" Height="400">
                         <Canvas Name="WheelCanvas" Width="400" Height="400" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Canvas.CacheMode>
+                                <BitmapCache EnableClearType="False" RenderAtScale="2" SnapsToDevicePixels="True"></BitmapCache>
+                            </Canvas.CacheMode>
                             <Canvas.RenderTransform>
                                 <RotateTransform x:Name="WheelRotation" Angle="0" CenterX="200" CenterY="200"></RotateTransform>
                             </Canvas.RenderTransform>

@@ -87,7 +87,9 @@ namespace WheelSpinner
 
         private void OnSpinCompleted(Game game, Window window)
         {
+            
             Api.Dialogs.ShowMessage($"You won {game.Name}!", "Congratulations!");
+            
         }
         public void OnWindowClosed(object sender, EventArgs e)
         {
