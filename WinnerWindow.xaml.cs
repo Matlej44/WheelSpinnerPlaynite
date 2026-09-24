@@ -23,10 +23,37 @@ namespace WheelSpinner
             Api = api;
             this.logger = logger;
             GameName.Content = winner.Name;
-            CoverArt.Source = GetImage(winner);
-            
-            
-            
+            var image = GetImage(winner);
+            if (image != null)
+            {
+                CoverArt.Source = image;
+            }
+            else
+            {
+                //We fallBack to the default cover art 
+                var path = new Uri(Path.Combine(Api.Paths.ApplicationPath, "Themes", "Desktop", "Default","Images", "custom_cover_background.png"), UriKind.Absolute);
+                if (File.Exists(path.LocalPath))
+                {
+                    var imageFallBack = new BitmapImage
+                    {
+                        DecodePixelHeight = 560,
+                        DecodePixelWidth = 420
+                    };
+                    imageFallBack.BeginInit();
+                    imageFallBack.CacheOption = BitmapCacheOption.OnLoad;
+                    imageFallBack.UriSource = path;
+                    imageFallBack.EndInit();
+                    if(imageFallBack.CanFreeze) imageFallBack.Freeze();
+                    CoverArt.Source = imageFallBack;
+                }
+                else
+                {
+                    
+                }
+            }
+
+
+
         }
 
         private BitmapImage GetImage(Game game)
@@ -55,9 +82,11 @@ namespace WheelSpinner
 
             try
             {
-                var image = new BitmapImage();
-                image.DecodePixelHeight = 560;
-                image.DecodePixelWidth = 420;
+                var image = new BitmapImage
+                {
+                    DecodePixelHeight = 560,
+                    DecodePixelWidth = 420
+                };
                 image.BeginInit();
                 image.CacheOption = BitmapCacheOption.OnLoad;
                 image.UriSource = new Uri(source, UriKind.Absolute);
