@@ -341,7 +341,8 @@ namespace WheelSpinner
 
             double total = _wheelItems.Sum(s => s.Weight);
             double cursor = 0;
-            const double minAngleForLabel = 2.5;
+            const double minAngleForLabel = 4;
+            
             for (var i = 0; i < _wheelItems.Count; i++)
             {
                 var sliceAngle = (_wheelItems[i].Weight / total) * 360;
