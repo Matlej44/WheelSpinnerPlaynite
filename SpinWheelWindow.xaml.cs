@@ -32,7 +32,7 @@ namespace WheelSpinner
 
         private readonly List<Color> _palette = new List<Color>
         {
-            Colors.Red, Colors.Red, Colors.OrangeRed, Colors.Orange, Colors.Yellow, Colors.YellowGreen,
+            Colors.Red, Colors.OrangeRed, Colors.Orange, Colors.Yellow, Colors.YellowGreen
         };
 
         private List<(Game Game, int Weight)> _wheelItems = new List<(Game Game, int Weight)>();
