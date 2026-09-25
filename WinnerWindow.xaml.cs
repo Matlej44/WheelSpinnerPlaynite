@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -32,28 +33,27 @@ namespace WheelSpinner
             else
             {
                 //We fallBack to the default cover art 
-                var path = new Uri(
-                    Path.Combine(Api.Paths.ApplicationPath, "Themes", "Desktop", "Default", "Images",
-                        "custom_cover_background.png"), UriKind.Absolute);
-                if (File.Exists(path.LocalPath))
+                var defaultImage = Application.Current.TryFindResource("DefaultGameCover") as BitmapImage;
+                if (defaultImage != null)
                 {
-                    var imageFallBack = new BitmapImage
-                    {
-                        DecodePixelHeight = 560,
-                        DecodePixelWidth = 420
-                    };
-                    imageFallBack.BeginInit();
-                    imageFallBack.CacheOption = BitmapCacheOption.OnLoad;
-                    imageFallBack.UriSource = path;
-                    imageFallBack.EndInit();
-                    if (imageFallBack.CanFreeze) imageFallBack.Freeze();
-                    CoverArt.Source = imageFallBack;
+                    CoverArt.Source = defaultImage;
                 }
+                //If there is no default cover art, we just make a black cover art
                 else
                 {
-                    CoverArt.Source = new WriteableBitmap((int)CoverArt.Width, (int)CoverArt.Height, 96, 96,
+                    var bitmap = new WriteableBitmap(420, 560, 96, 96,
                         PixelFormats.Pbgra32,
                         null);
+                    byte[] pixels = new byte[420*560*4];
+                    for (int i = 0; i < pixels.Length; i+=4)
+                    {
+                        pixels[i] = 0;
+                        pixels[i+1] = 0;
+                        pixels[i+2] = 0;
+                        pixels[i+3] = 255;
+                    }
+                    bitmap.WritePixels(new Int32Rect(0, 0, 420, 560), pixels, 420 * 4, 0);
+                    CoverArt.Source = bitmap;
                 }
             }
         }
@@ -101,6 +101,26 @@ namespace WheelSpinner
                 logger.Error(e, "Failed to load cover image.");
                 return null;
             }
+        }
+
+        private void ShowGameAndClose(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void PlayGameButton(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void BackToWheelButton(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ExcludeGameButton(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }

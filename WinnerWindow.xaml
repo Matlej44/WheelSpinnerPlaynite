@@ -5,23 +5,113 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:WheelSpinner"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="450">
-    <Grid>
+             d:DesignHeight="800" d:DesignWidth="600">
+    <UserControl.Resources>
+
+
+        <Style x:Key="ActionButtonBase" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Height" Value="46" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.85" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.7" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
+            <Setter Property="Background" Value="#2F80ED" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="Height" Value="52" />
+        </Style>
+
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
+            <Setter Property="Background" Value="#1E2A3D" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+
+
+        <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#E57373" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Height" Value="34" />
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid Margin="0,0,0,20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"></RowDefinition>
-            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"></RowDefinition>
-                <RowDefinition Height="*"></RowDefinition>
-            </Grid.RowDefinitions>
-            <Image Grid.Row="0"  Width="420" Height="560" x:Name="CoverArt">
-            </Image>
-            <Label Grid.Row="1" x:Name="GameName"></Label>
-        </Grid>
-        <Grid Grid.Row="1">
-            
-        </Grid>
+
+
+        <Border Grid.Row="0" Width="360" Height="480" HorizontalAlignment="Center" Margin="0,28,0,0" CornerRadius="14">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="28" ShadowDepth="8" Opacity="0.45" />
+            </Border.Effect>
+            <Border CornerRadius="14" ClipToBounds="True" Background="#101826">
+                <Image x:Name="CoverArt" Stretch="UniformToFill" />
+            </Border>
+        </Border>
+
+
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="24,18,24,0">
+            <Label x:Name="GameName"
+                   FontSize="24" FontWeight="Bold"
+                   HorizontalContentAlignment="Center"
+                   HorizontalAlignment="Stretch"
+                   Foreground="{DynamicResource TextBrush}"
+                   Padding="0" />
+        </StackPanel>
+
+
+        <Grid Grid.Row="2" />
+
+
+        <StackPanel Grid.Row="3" Margin="28,0,28,0">
+            <Button Content="▶  Play" Click="PlayGameButton" Style="{StaticResource PrimaryButton}" Margin="0,0,0,10" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Content="Show Game" Click="ShowGameAndClose"
+                        Style="{StaticResource SecondaryButton}" />
+                <Button Grid.Column="2" Content="Respin" Click="BackToWheelButton"
+                        Style="{StaticResource SecondaryButton}" />
+            </Grid>
+            <Button Content="Exclude this game" Click="ExcludeGameButton" Style="{StaticResource GhostButton}"
+                    HorizontalAlignment="Center" />
+        </StackPanel>
     </Grid>
 </UserControl>

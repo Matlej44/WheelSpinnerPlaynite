@@ -60,6 +60,7 @@ namespace WheelSpinner
             window.SizeToContent = SizeToContent.Manual;
             window.MinHeight = 500;
             window.MinWidth = 700;
+            window.Title = "Spin Wheel";
 
             var windowContent = new SpinWheelWindow(api: Api,logger, saveState);
             window.Content = windowContent;
@@ -78,7 +79,7 @@ namespace WheelSpinner
             window.Closed += OnWindowClosed;
             windowContent.SpinCompleted += (game) =>
             {
-                OnSpinCompleted(game, window);
+                window.Dispatcher.InvokeAsync(()=>OnSpinCompleted(game, window));
             };
             
             
@@ -93,6 +94,7 @@ namespace WheelSpinner
                 ShowMaximizeButton = false,
                 ShowMinimizeButton = false
             });
+            winnerWindow.Title = "Spin Wheel Selected Game: " + game.Name;
             winnerWindow.Closed += (sender, args) =>
             {
                 window.IsEnabled = true;
@@ -105,7 +107,7 @@ namespace WheelSpinner
             winnerWindow.Height = 800;
             winnerWindow.Width = 600;
             winnerWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            winnerWindow.Owner = window;
+            winnerWindow.Owner = Api.Dialogs.GetCurrentAppWindow();
 
             winnerWindow.ShowDialog();
             
@@ -114,7 +116,6 @@ namespace WheelSpinner
         }
         public void OnWindowClosed(object sender, EventArgs e)
         {
-            
             try
             {
                 if (sender is Window window && window.Content is SpinWheelWindow windowContent)
