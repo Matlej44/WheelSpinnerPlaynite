@@ -99,8 +99,20 @@ namespace WheelSpinner
             {
                 window.IsEnabled = true;
             };
-
             var winnerContent = new WinnerWindow(api: Api, winner: game, logger: logger);
+            
+           winnerContent.CloseAll += (winner) =>
+           {
+               winnerWindow.Close();
+               window.Close();
+           };
+
+           winnerContent.ExcludeGame += game1 =>
+           {
+               var windowContent = window.Content as SpinWheelWindow;
+               windowContent.ExcludeGame(game1.Id);
+           };
+            
             winnerWindow.Content = winnerContent;
             
             winnerWindow.ResizeMode = ResizeMode.NoResize;

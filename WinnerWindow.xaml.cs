@@ -17,6 +17,10 @@ namespace WheelSpinner
     {
         private IPlayniteAPI Api { get; set; }
         private ILogger logger { get; set; }
+        private Game _winner { get; set;}
+        public event Action<Window> CloseAll;
+        public event Action<Game> ExcludeGame;
+        
 
         public WinnerWindow(IPlayniteAPI api, Game winner, ILogger logger)
         {
@@ -24,6 +28,7 @@ namespace WheelSpinner
 
             Api = api;
             this.logger = logger;
+            _winner = winner;
             GameName.Content = winner.Name;
             var image = GetImage(winner);
             if (image != null)
@@ -105,22 +110,27 @@ namespace WheelSpinner
 
         private void ShowGameAndClose(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            Api.MainView.SelectGame(_winner.Id);
+            CloseAll?.Invoke(Window.GetWindow(this));
         }
 
         private void PlayGameButton(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            CloseAll?.Invoke(Window.GetWindow(this));
+            Api.StartGame(_winner.Id);
         }
 
         private void BackToWheelButton(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            Window window = Window.GetWindow(this);
+            window.Close();
         }
 
         private void ExcludeGameButton(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            Window window = Window.GetWindow(this);
+            window.Close();
+            ExcludeGame?.Invoke(_winner);
         }
     }
 }

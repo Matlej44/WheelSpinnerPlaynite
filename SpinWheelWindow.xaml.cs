@@ -143,7 +143,12 @@ namespace WheelSpinner
             var button = sender as Button;
             if (button == null)
                 return;
-            _excludedGames.Add(Guid.Parse(button.Tag.ToString()));
+            ExcludeGame(Guid.Parse(button.Tag.ToString()));
+        }
+
+        public void ExcludeGame(Guid gameId)
+        {
+            _excludedGames.Add(gameId);
             InsertGamesAsync();
         }
 
