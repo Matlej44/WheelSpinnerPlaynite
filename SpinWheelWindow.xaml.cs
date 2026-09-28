@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Media;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,7 +26,16 @@ namespace WheelSpinner
         private readonly HashSet<Guid> _excludedGames = new HashSet<Guid>();
         private readonly Dictionary<Guid, int> _multipliedGames = new Dictionary<Guid, int>();
         private bool _isCheckboxChecked = true;
+
         private bool _isMuted = false;
+        private List<double> _sliceBoundaries = new List<double>();
+        private List<MediaPlayer> _tickSound = new List<MediaPlayer>();
+        private int _maxTickPoolSize = 10;
+        private int _tickPoolPointer = 0;
+        private int _lastSliceIndex = -1;
+        private DateTime _lastTickTime = DateTime.MinValue;
+        private readonly TimeSpan _minTickInterval = TimeSpan.FromMilliseconds(30);
+
         private ILogger logger { get; set; }
 
         private readonly Random _random = new Random();
@@ -52,6 +62,32 @@ namespace WheelSpinner
 
             this.logger = logger;
 
+            try
+            {
+                var soundPath = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ??
+                    throw new InvalidOperationException(),
+                    "Resources", "Click.wav");
+                if (System.IO.File.Exists(soundPath))
+                {
+                    var uri = new Uri(soundPath);
+                    for (var i = 0; i < _maxTickPoolSize; i++)
+                    {
+                        var mediaPlayer = new MediaPlayer();
+                        mediaPlayer.Open(uri);
+                        _tickSound.Add(mediaPlayer);
+                    }
+                }
+                else
+                {
+                    logger.Warn("Sound file not found.");
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Failed to load sound file.");
+            }
+
             Api = api;
             if (saveState != null)
             {
@@ -67,7 +103,6 @@ namespace WheelSpinner
             }
 
             InsertGamesAsync();
-            
         }
 
         private async void InsertGamesAsync()
@@ -93,7 +128,6 @@ namespace WheelSpinner
                 logger.Error(e, "Failed to draw wheel.");
             }
         }
-        
 
 
         private void UIElement_OnPreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -318,6 +352,14 @@ namespace WheelSpinner
             Api.Dialogs.ShowMessage("Preset has been reset.", "Reset");
         }
 
+        private void MuteOrUnMuteButton(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is Button button))
+                return;
+            _isMuted = !_isMuted;
+            button.Content = _isMuted ? "🔇" : "🔊";
+        }
+
         public SaveState GetSaveState()
         {
             return new SaveState(_multipliedGames, _excludedGames, _isCheckboxChecked);
@@ -335,6 +377,8 @@ namespace WheelSpinner
             _wheelItems = _games.Where(game => !_excludedGames.Contains(game.Id))
                 .Select(game => (game, GetWeight(game)))
                 .ToList();
+            _sliceBoundaries.Clear();
+
             if (_wheelItems.Count == 0)
                 return;
 
@@ -342,16 +386,17 @@ namespace WheelSpinner
             var cx = WheelCanvas.Width / 2;
             var cy = WheelCanvas.Height / 2;
 
-            
+
             WheelCanvas.Clip = new EllipseGeometry(new Point(cx, cy), radius, radius);
 
             double total = _wheelItems.Sum(s => s.Weight);
             double cursor = 0;
             const double minAngleForLabel = 4;
-            
+
             for (var i = 0; i < _wheelItems.Count; i++)
             {
                 var sliceAngle = (_wheelItems[i].Weight / total) * 360;
+                _sliceBoundaries.Add(cursor);
                 var startAngle = cursor;
                 var endAngle = cursor + sliceAngle;
                 WheelCanvas.Children.Add(
@@ -364,10 +409,11 @@ namespace WheelSpinner
                         WheelCanvas.Children.Add(label);
                     }
                 }
+
                 cursor = endAngle;
             }
 
-            
+
             var outlineRadius = radius;
             var outline = new System.Windows.Shapes.Ellipse
             {
@@ -381,6 +427,60 @@ namespace WheelSpinner
             Canvas.SetLeft(outline, cx - outlineRadius);
             Canvas.SetTop(outline, cy - outlineRadius);
             WheelCanvas.Children.Add(outline);
+        }
+
+        private int GetSliceIndex(double angle)
+        {
+            for (var i = _sliceBoundaries.Count - 1; i >= 0; i--)
+            {
+                if (angle >= _sliceBoundaries[i])
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void OnRenderingDuringSpin(object sender, EventArgs e)
+        {
+            if (_sliceBoundaries.Count == 0)
+                return;
+
+            var rotation = WheelRotation.Angle;
+            var pointerLocalAngle = ((-rotation % 360) + 360) % 360;
+            var currentIndex = GetSliceIndex(pointerLocalAngle);
+            if (currentIndex != _lastSliceIndex)
+            {
+                _lastSliceIndex = currentIndex;
+                var now = DateTime.UtcNow;
+                if (now - _lastTickTime > _minTickInterval)
+                {
+                    _lastTickTime = now;
+                    PlayTickSound();
+                }
+            }
+        }
+
+        private void PlayTickSound()
+        {
+            if (_isMuted || _tickSound.Count == 0)
+                return;
+            try
+            {
+                var player = _tickSound[_tickPoolPointer];
+                _tickPoolPointer = (_tickPoolPointer + 1) % _tickSound.Count;
+                
+                var volume = 0.8 + (_random.NextDouble() - 0.5) * 0.2;
+                //var pitch = 1.0 + (_random.NextDouble() - 0.5) * 0.2;
+                
+                player.Volume = volume;
+                player.Position = TimeSpan.Zero;
+                //_tickSound.SpeedRatio = pitch;
+                player.Play();
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Failed to play tick sound.");
+            }
         }
 
         private Path CreateSlice(double cx, double cy, double radius, double startAngle, double endAngle, Color color)
@@ -503,15 +603,16 @@ namespace WheelSpinner
 
             var fullspin = 5 + _random.Next(3);
 
-            
+
             var baseTarget = ((360 - targetSliceCenter) % 360 + 360) % 360;
             var desiredMod = ((baseTarget + jitter) % 360 + 360) % 360;
 
-           
+
             var forwardDelta = ((desiredMod - _angle) % 360 + 360) % 360;
 
             var finalAngle = _angle + forwardDelta + fullspin * 360;
 
+            _lastSliceIndex = GetSliceIndex(((-_angle % 360) + 360) % 360);
             var animation = new DoubleAnimation
             {
                 From = _angle,
@@ -522,8 +623,11 @@ namespace WheelSpinner
             var winner = _wheelItems[winningIndex].Game;
             SpinButton.IsEnabled = false;
 
+            CompositionTarget.Rendering += OnRenderingDuringSpin;
+
             animation.Completed += (sender, args) =>
             {
+                CompositionTarget.Rendering -= OnRenderingDuringSpin;
                 _angle = finalAngle % 360;
                 SpinButton.IsEnabled = true;
                 logger.Info($"Spin result winner={winner.Name} roll={roll} winningIndex={winningIndex} " +
@@ -538,24 +642,6 @@ namespace WheelSpinner
         private void SpinButtonClick(object sender, RoutedEventArgs e)
         {
             Spin();
-        }
-
-        private void MuteOrUnMuteButton(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            var content = button.Content as string;
-            //Button is unmuted
-            if (content == "🔊")
-            {
-                _isMuted = !_isMuted;
-                button.Content = "🔇";
-            }
-            //Button is muted
-            else
-            {
-                _isMuted = true;
-                button.Content = "🔊";
-            }
         }
     }
 }

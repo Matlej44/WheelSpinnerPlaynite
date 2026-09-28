@@ -41,8 +41,10 @@ namespace WheelSpinner
             };
         }
 
+        private bool IsWindowOpen;
         private void CreateWindow()
         {
+            IsWindowOpen = true;
             var window = Api.Dialogs.CreateWindow(new WindowCreationOptions
             {
                 ShowMinimizeButton = false
@@ -63,15 +65,6 @@ namespace WheelSpinner
             window.Title = "Spin Wheel";
             var windowContent = new SpinWheelWindow(api: Api,logger, saveState);
             window.Content = windowContent;
-            window.StateChanged += (sender, args) =>
-            {
-                window.Dispatcher.InvokeAsync(() =>
-                {
-                    window.InvalidateMeasure();
-                    window.InvalidateArrange();
-                    window.UpdateLayout();
-                }, System.Windows.Threading.DispatcherPriority.Render);
-            };
             
             window.Owner = Api.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -87,6 +80,8 @@ namespace WheelSpinner
 
         private void OnSpinCompleted(Game game, Window window)
         {
+            if (!IsWindowOpen)
+                return;
             window.IsEnabled = false;
             var winnerWindow = Api.Dialogs.CreateWindow(new WindowCreationOptions
             {
@@ -127,6 +122,7 @@ namespace WheelSpinner
         }
         public void OnWindowClosed(object sender, EventArgs e)
         {
+            
             try
             {
                 if (sender is Window window && window.Content is SpinWheelWindow windowContent)
@@ -142,6 +138,7 @@ namespace WheelSpinner
             {
                 logger.Error(exception, "Failed to save settings on window close.");
             }
+            IsWindowOpen = false;
         }
         
         
