@@ -1,18 +1,16 @@
-﻿namespace WheelSpinner.Models
+using Playnite.SDK.Models;
+
+namespace WheelSpinner.Models
 {
     public class WheelItem
     {
-        public string GameName { get; set; }
-        public int Weight { get; set; }
-
-        public WheelItem(string gameName, int weight)
+        public WheelItem(Game game, int weight)
         {
-            GameName = gameName;
+            Game = game;
             Weight = weight;
         }
 
-        public WheelItem()
-        {
-        }
+        public Game Game { get; }
+        public int Weight { get; }
     }
 }
