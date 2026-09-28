@@ -122,11 +122,11 @@ namespace WheelSpinner
         }
         public void OnWindowClosed(object sender, EventArgs e)
         {
-            
             try
             {
                 if (sender is Window window && window.Content is SpinWheelWindow windowContent)
                 {
+                    windowContent._isMuted = true;
                     var save = windowContent.GetSaveState();
                     if (save != null)
                     {

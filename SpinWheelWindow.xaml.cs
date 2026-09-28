@@ -27,7 +27,7 @@ namespace WheelSpinner
         private readonly Dictionary<Guid, int> _multipliedGames = new Dictionary<Guid, int>();
         private bool _isCheckboxChecked = true;
 
-        private bool _isMuted = false;
+        public bool _isMuted = false;
         private List<double> _sliceBoundaries = new List<double>();
         private List<MediaPlayer> _tickSound = new List<MediaPlayer>();
         private int _maxTickPoolSize = 10;
