@@ -4,9 +4,8 @@ using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using WheelSpinner.Models;
@@ -21,6 +20,7 @@ namespace WheelSpinner
 
         public override Guid Id { get; } = Guid.Parse("75428eb9-dec4-4aa7-9f1e-62e0a2dcd044");
         private IPlayniteAPI Api { get; set; }
+        
 
         public WheelSpinner(IPlayniteAPI api) : base(api)
         {
@@ -61,7 +61,6 @@ namespace WheelSpinner
             window.MinHeight = 500;
             window.MinWidth = 700;
             window.Title = "Spin Wheel";
-
             var windowContent = new SpinWheelWindow(api: Api,logger, saveState);
             window.Content = windowContent;
             window.StateChanged += (sender, args) =>

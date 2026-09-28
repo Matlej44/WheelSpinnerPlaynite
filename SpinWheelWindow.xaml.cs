@@ -25,6 +25,7 @@ namespace WheelSpinner
         private readonly HashSet<Guid> _excludedGames = new HashSet<Guid>();
         private readonly Dictionary<Guid, int> _multipliedGames = new Dictionary<Guid, int>();
         private bool _isCheckboxChecked = true;
+        private bool _isMuted = false;
         private ILogger logger { get; set; }
 
         private readonly Random _random = new Random();
@@ -537,6 +538,24 @@ namespace WheelSpinner
         private void SpinButtonClick(object sender, RoutedEventArgs e)
         {
             Spin();
+        }
+
+        private void MuteOrUnMuteButton(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var content = button.Content as string;
+            //Button is unmuted
+            if (content == "🔊")
+            {
+                _isMuted = !_isMuted;
+                button.Content = "🔇";
+            }
+            //Button is muted
+            else
+            {
+                _isMuted = true;
+                button.Content = "🔊";
+            }
         }
     }
 }

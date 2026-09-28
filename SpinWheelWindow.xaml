@@ -89,7 +89,8 @@
                 <StackPanel Orientation="Horizontal">
                     <CheckBox Click="CheckboxChanged" IsChecked="True" Margin="0 0 2 0 " Name="FilteredBox">Filtered</CheckBox>
                     <Button Click="ResetPresetButton" Margin="0 0 2 0">Reset Preset</Button>
-                    <Button Click="SpinButtonClick" Name="SpinButton">Spin The Wheel</Button>
+                    <Button Click="SpinButtonClick" Name="SpinButton" Margin="0 0 2 0">Spin The Wheel</Button>
+                    <Button Content="🔊" Name="MuteButton" Click="MuteOrUnMuteButton"></Button>
                 </StackPanel>
             </Border>
             <Border Grid.Row="1" Style="{StaticResource SideLabelBorder}">
