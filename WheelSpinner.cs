@@ -24,7 +24,8 @@ namespace WheelSpinner
             {
                 HasSettings = true
             };
-            dialogs = new SpinWheelDialogController(api, logger, new SaveStateRepository(this, logger));
+            dialogs = new SpinWheelDialogController(api, logger, settings, new SaveStateRepository(this, logger));
+            
         }
 
         public override IEnumerable<MainMenuItem> GetMainMenuItems(GetMainMenuItemsArgs args)

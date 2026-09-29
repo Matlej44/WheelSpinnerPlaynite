@@ -18,6 +18,7 @@ namespace WheelSpinner.Services
         private readonly Random _random;
         private int _poolPointer;
         private DateTime _lastTickTime = DateTime.MinValue;
+        private double _volume = 0.8;
 
         public TickSoundPlayer(ILogger logger, Random random)
         {
@@ -76,7 +77,7 @@ namespace WheelSpinner.Services
                 var player = _players[_poolPointer];
                 _poolPointer = (_poolPointer + 1) % _players.Count;
 
-                player.Volume = 0.8 + (_random.NextDouble() - 0.5) * 0.2;
+                player.Volume = _volume + (_random.NextDouble() - 0.5) * 0.2;
                 player.Position = TimeSpan.Zero;
                 player.Play();
             }

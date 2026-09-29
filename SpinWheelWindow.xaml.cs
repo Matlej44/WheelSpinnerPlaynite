@@ -27,10 +27,11 @@ namespace WheelSpinner
         private IReadOnlyList<WheelItem> _wheelItems = new List<WheelItem>();
         private double _angle;
         private int _lastSliceIndex = -1;
+        private bool _isSpinning;
 
         public event Action<Game> SpinCompleted;
 
-        public SpinWheelWindow(IPlayniteAPI api, ILogger logger, SaveState saveState = null)
+        public SpinWheelWindow(IPlayniteAPI api, ILogger logger,WheelSpinnerSettingsViewModel settings ,SaveState saveState = null)
         {
             InitializeComponent();
             ApplyThemeTextStyle();
@@ -44,6 +45,8 @@ namespace WheelSpinner
             _spinCalculator = new WheelSpinCalculator(random);
             _tickSound = new TickSoundPlayer(logger, random);
             _tickSound.Load();
+            _tickSound.IsMuted = saveState?.IsMuted ?? false;
+            MuteButton.Content = _tickSound.IsMuted ? "🔇" : "🔊";
             _rowFactory = new GameRowFactory(this, _selection.GetWeight, OnWeightChanged, ExcludeGame, IncludeGame);
 
             if (FilteredBox.IsChecked != _selection.UseFilteredView)
@@ -55,7 +58,13 @@ namespace WheelSpinner
         }
         
 
-        public SaveState GetSaveState() => _selection.ToSaveState();
+        public SaveState GetSaveState()
+        {
+            
+            var save = _selection.ToSaveState();
+            save.IsMuted = _tickSound.IsMuted;
+            return save;
+        }
 
         public void ExcludeGame(Guid gameId)
         {
@@ -159,10 +168,22 @@ namespace WheelSpinner
         {
             Spin();
         }
+
+        public void StopSpin()
+        {
+            if (!_isSpinning)
+                return;
+            _isSpinning = false;
+            CompositionTarget.Rendering -= OnRenderingDuringSpin;
+            WheelRotation.BeginAnimation(RotateTransform.AngleProperty, null);
+            _angle = WheelRotation.Angle;
+            SpinButton.IsEnabled = true;
+        }
         
 
         private void Spin()
         {
+            _isSpinning = true;
             if (_wheelItems.Count == 0)
             {
                 _api.Dialogs.ShowMessage("No games to spin.", "Error");
@@ -180,7 +201,8 @@ namespace WheelSpinner
                 From = _angle,
                 To = plan.FinalAngle,
                 Duration = new Duration(TimeSpan.FromSeconds(plan.DurationSeconds)),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                SpeedRatio = 1.0
             };
             animation.Completed += (s, e) => OnSpinAnimationCompleted(plan);
 
@@ -189,6 +211,9 @@ namespace WheelSpinner
 
         private void OnSpinAnimationCompleted(SpinPlan plan)
         {
+            if (!_isSpinning)
+                return;
+            _isSpinning = false;
             CompositionTarget.Rendering -= OnRenderingDuringSpin;
             _angle = plan.FinalAngle % 360;
             SpinButton.IsEnabled = true;

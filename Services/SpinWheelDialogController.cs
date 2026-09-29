@@ -11,21 +11,22 @@ namespace WheelSpinner.Services
         private readonly IPlayniteAPI _api;
         private readonly ILogger _logger;
         private readonly SaveStateRepository _saveStates;
-        private bool _isSpinWindowOpen;
+        private readonly WheelSpinnerSettingsViewModel _settings;
 
-        public SpinWheelDialogController(IPlayniteAPI api, ILogger logger, SaveStateRepository saveStates)
+        public SpinWheelDialogController(IPlayniteAPI api, ILogger logger,WheelSpinnerSettingsViewModel settings, SaveStateRepository saveStates)
         {
             _api = api;
             _logger = logger;
             _saveStates = saveStates;
+            _settings = settings;
         }
 
         public void ShowSpinWindow()
         {
-            _isSpinWindowOpen = true;
+            var isSpinWindowOpen = true;
 
             var window = _api.Dialogs.CreateWindow(new WindowCreationOptions { ShowMinimizeButton = false });
-            var content = new SpinWheelWindow(_api, _logger, _saveStates.Load());
+            var content = new SpinWheelWindow(_api, _logger, _settings ,_saveStates.Load());
 
             window.Title = "Spin Wheel";
             window.ResizeMode = ResizeMode.CanResize;
@@ -36,9 +37,14 @@ namespace WheelSpinner.Services
             window.Owner = _api.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-            window.Closed += OnSpinWindowClosed;
+            window.Closed += (s, e) =>
+            {
+                content.StopSpin();
+                isSpinWindowOpen = false;
+                OnSpinWindowClosed(s, e);
+            };
             content.SpinCompleted += game =>
-                window.Dispatcher.InvokeAsync(() => ShowWinnerWindow(game, window));
+                window.Dispatcher.InvokeAsync(() => ShowWinnerWindow(game, window, isSpinWindowOpen));
 
             window.ShowDialog();
         }
@@ -49,13 +55,12 @@ namespace WheelSpinner.Services
             {
                 _saveStates.Save(content.GetSaveState());
             }
-
-            _isSpinWindowOpen = false;
+            
         }
 
-        private void ShowWinnerWindow(Game game, Window spinWindow)
+        private void ShowWinnerWindow(Game game, Window spinWindow,bool isSpinWindowOpen)
         {
-            if (!_isSpinWindowOpen)
+            if (!isSpinWindowOpen)
                 return;
 
             spinWindow.IsEnabled = false;
