@@ -5,16 +5,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WheelSpinner.Models;
 
 namespace WheelSpinner
 {
     public class WheelSpinnerSettings : ObservableObject
     {
-        private double option1 = 0.8;
-        private bool option2 = false;
+        private double volume = 0.8;
+        private SpeedModel speed = new SpeedModel("Normal", 1, 1);
 
-        public double Option1 { get => option1; set => SetValue(ref option1, value); }
-        public bool Option2 { get => option2; set => SetValue(ref option2, value); }
+        public double Volume { get => volume; set => SetValue(ref volume, value); }
+        public SpeedModel Speed { get => speed; set => SetValue(ref speed, value); }
         
     }
 

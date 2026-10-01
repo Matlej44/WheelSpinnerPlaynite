@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Playnite.SDK;
+using Playnite.SDK.Plugins;
 
 namespace WheelSpinner
 {
@@ -20,6 +22,28 @@ namespace WheelSpinner
         public WheelSpinnerSettingsView()
         {
             InitializeComponent();
+            
+        }
+
+        private void ResetToDefault(object sender, RoutedEventArgs e)
+        {
+            if (DataContext != null)
+            {
+                var settingsProperty = DataContext.GetType().GetProperty("Settings");
+        
+                if (settingsProperty != null)
+                {
+                    var settingsValue = settingsProperty.GetValue(DataContext, null);
+                    
+                    if (settingsValue is WheelSpinnerSettings settings)
+                    {
+                        settings.Volume = 0.8;
+                        return; 
+                    }
+                }
+            }
+            
+            API.Instance.Dialogs.ShowErrorMessage("Nie udało się odnaleźć kontekstu ustawień.");
         }
     }
 }
