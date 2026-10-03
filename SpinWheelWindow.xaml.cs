@@ -17,6 +17,7 @@ namespace WheelSpinner
     {
         private readonly IPlayniteAPI _api;
         private readonly ILogger _logger;
+        private readonly WheelSpinnerSettingsViewModel _settings;
 
         private readonly GameSelection _selection;
         private readonly WheelRenderer _renderer;
@@ -31,13 +32,14 @@ namespace WheelSpinner
 
         public event Action<Game> SpinCompleted;
 
-        public SpinWheelWindow(IPlayniteAPI api, ILogger logger,WheelSpinnerSettingsViewModel settings ,SaveState saveState = null)
+        public SpinWheelWindow(IPlayniteAPI api, ILogger logger, WheelSpinnerSettingsViewModel settings, SaveState saveState = null)
         {
             InitializeComponent();
             ApplyThemeTextStyle();
 
             _api = api;
             _logger = logger;
+            _settings = settings;
 
             var random = new Random();
             _selection = new GameSelection(api, saveState);
@@ -46,6 +48,7 @@ namespace WheelSpinner
             _tickSound = new TickSoundPlayer(logger, random);
             _tickSound.Load();
             _tickSound.IsMuted = saveState?.IsMuted ?? false;
+            ApplySettings();
             MuteButton.Content = _tickSound.IsMuted ? "🔇" : "🔊";
             _rowFactory = new GameRowFactory(this, _selection.GetWeight, OnWeightChanged, ExcludeGame, IncludeGame);
 
@@ -56,7 +59,14 @@ namespace WheelSpinner
 
             RefreshGameListsAsync();
         }
-        
+
+        private WheelSpinnerSettings CurrentSettings => _settings?.Settings ?? new WheelSpinnerSettings();
+
+        private void ApplySettings()
+        {
+            _tickSound.Volume = CurrentSettings.Volume;
+        }
+
 
         public SaveState GetSaveState()
         {
@@ -183,13 +193,15 @@ namespace WheelSpinner
 
         private void Spin()
         {
-            _isSpinning = true;
             if (_wheelItems.Count == 0)
             {
                 _api.Dialogs.ShowMessage("No games to spin.", "Error");
                 return;
             }
+            _isSpinning = true;
 
+            ApplySettings();
+            var speed = CurrentSettings.ActiveItem;
             var plan = _spinCalculator.CreatePlan(_wheelItems, _angle);
             _lastSliceIndex = _renderer.GetSliceIndex(AngleMath.Normalize(-_angle));
 
@@ -200,9 +212,9 @@ namespace WheelSpinner
             {
                 From = _angle,
                 To = plan.FinalAngle,
-                Duration = new Duration(TimeSpan.FromSeconds(plan.DurationSeconds)),
+                Duration = new Duration(TimeSpan.FromSeconds(plan.DurationSeconds * speed.DurationMultiplier)),
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
-                SpeedRatio = 1.0
+                SpeedRatio = speed.Speed
             };
             animation.Completed += (s, e) => OnSpinAnimationCompleted(plan);
 

@@ -13,8 +13,11 @@
             </Grid.ColumnDefinitions>
             <Button HorizontalAlignment="Left" Margin="5" Click="ResetToDefault">Reset To Default</Button>
         </Grid>
-        <TextBlock Text="Volume:"/>
-        <Slider Minimum="0.1" Maximum="1" TickPlacement="BottomRight" Value="{Binding Settings.Volume, UpdateSourceTrigger=PropertyChanged}" Margin="10"></Slider>
+        <TextBlock Text="Volume:" />
+        <Slider Minimum="0.1" Maximum="1" TickPlacement="BottomRight"
+                Value="{Binding Settings.Volume, UpdateSourceTrigger=PropertyChanged}" Margin="10"
+                IsMoveToPointEnabled="True">
+        </Slider>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
@@ -23,9 +26,20 @@
             <Label Grid.Column="0" Margin="10 0 0 0">0.1</Label>
             <Label Grid.Column="1" HorizontalAlignment="Right" Margin="0 0 10 0">1</Label>
         </Grid>
-        <TextBlock Text="Wheel Speed:"/>
-        <ComboBox Name="ComboBox" SelectedValue="{Binding Settings.Speed}">
-            
-        </ComboBox>
+        <TextBlock Text="Wheel Speed:" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <ComboBox Name="ComboBox"
+                      ItemsSource="{Binding Settings.ItemList}"
+                      SelectedValue="{Binding Settings.Speed, Mode=TwoWay}"
+                      DisplayMemberPath="Name"
+                      SelectedValuePath="Name"
+                      Margin="5">
+            </ComboBox>
+        </Grid>
+
     </StackPanel>
 </UserControl>

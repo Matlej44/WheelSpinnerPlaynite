@@ -12,11 +12,22 @@ namespace WheelSpinner
     public class WheelSpinnerSettings : ObservableObject
     {
         private double volume = 0.8;
-        private SpeedModel speed = new SpeedModel("Normal", 1, 1);
+        private string speed = "Normal";
 
         public double Volume { get => volume; set => SetValue(ref volume, value); }
-        public SpeedModel Speed { get => speed; set => SetValue(ref speed, value); }
+        public string Speed { get => speed; set => SetValue(ref speed, value); }
         
+        [DontSerialize]
+        public List<SpeedModel> ItemList { get; set; } = new List<SpeedModel>
+        {
+            new SpeedModel("Very Slow", 0.5, 0.8),
+            new SpeedModel("Slow", 0.75, 0.9),
+            new SpeedModel("Normal", 1, 1),
+            new SpeedModel("Fast", 1.5, 1.1),
+            new SpeedModel("Very Fast", 2, 1.2),
+        };
+        [DontSerialize]
+        public SpeedModel ActiveItem => ItemList.FirstOrDefault(x => x.Name == Speed) ?? ItemList[2];
     }
 
     public class WheelSpinnerSettingsViewModel : ObservableObject, ISettings
