@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -17,12 +18,10 @@ namespace WheelSpinner.Rendering
     public class WheelRenderer
     {
         private const double MinAngleForLabel = 4;
-
-        private static readonly Color[] Palette =
-        {
-            Colors.Red, Colors.OrangeRed, Colors.Orange, Colors.Yellow, Colors.YellowGreen
-        };
-
+        
+        private const double Saturation = 0.8;
+        private const double Brightness = 0.92;
+        
         private readonly Canvas _canvas;
         private readonly List<double> _sliceBoundaries = new List<double>();
 
@@ -63,11 +62,33 @@ namespace WheelSpinner.Rendering
             DrawOutline(cx, cy, radius);
         }
 
+        private static Color GetSliceColor(int index, int total)
+        {
+            if (total == 0)
+                return ColorFromHsv(0, Saturation, Brightness);
+            var hue = 360*index/total;
+            return ColorFromHsv(hue, Saturation, Brightness);
+        }
+
+        private static Color ColorFromHsv(double h, double s, double v)
+        {
+            h = ((h % 360) + 360) % 360;
+            var c = v * s;
+            var x = c * (1 - Math.Abs((h / 60) % 2 - 1));
+            var m = v - c;
+            double r, g, b;
+            if (h < 60) { r = c; g = x; b = 0; }
+            else if (h < 120) { r = x; g = c; b = 0; }
+            else if (h < 180) { r = 0; g = c; b = x; }
+            else if (h < 240) { r = 0; g = x; b = c; }
+            else if (h < 300) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+            return Color.FromRgb((byte)((r+m) * 255), (byte)((g+m) * 255), (byte)((b+m) * 255));
+        }
+
         private void DrawSlices(IReadOnlyList<WheelItem> items, double cx, double cy, double radius)
         {
-            double total = 0;
-            foreach (var item in items)
-                total += item.Weight;
+            var total = items.Aggregate<WheelItem, double>(0, (current, item) => current + item.Weight);
 
             double cursor = 0;
             for (var i = 0; i < items.Count; i++)
@@ -76,8 +97,10 @@ namespace WheelSpinner.Rendering
                 var startAngle = cursor;
                 var endAngle = cursor + sliceAngle;
                 _sliceBoundaries.Add(startAngle);
+                
+                var color = GetSliceColor(i, items.Count);
 
-                _canvas.Children.Add(CreateSlice(cx, cy, radius, startAngle, endAngle, Palette[i % Palette.Length]));
+                _canvas.Children.Add(CreateSlice(cx, cy, radius, startAngle, endAngle, color));
 
                 if (sliceAngle >= MinAngleForLabel)
                 {
@@ -111,6 +134,7 @@ namespace WheelSpinner.Rendering
             var startPoint = PointOnCircle(cx, cy, radius, startAngle);
             var endPoint = PointOnCircle(cx, cy, radius, endAngle);
             var isLargeArc = (endAngle - startAngle) > 180;
+            var angle = endAngle - startAngle;
 
             var figure = new PathFigure { StartPoint = new Point(cx, cy), IsClosed = true };
             figure.Segments.Add(new LineSegment(startPoint, true));
@@ -119,7 +143,13 @@ namespace WheelSpinner.Rendering
 
             var geometry = new PathGeometry();
             geometry.Figures.Add(figure);
-            return new Path { Data = geometry, Fill = new SolidColorBrush(color) };
+            return new Path
+            {
+                Data = geometry,
+                Fill = new SolidColorBrush(color),
+                Stroke = new SolidColorBrush(Colors.SlateGray),
+                StrokeThickness = angle>2 ? 1 : 0
+            };
         }
 
         private static TextBlock CreateLabel(string text, double cx, double cy, double radius, double startAngle,
@@ -186,7 +216,7 @@ namespace WheelSpinner.Rendering
         private static Point PointOnCircle(double cx, double cy, double radius, double angleDegrees)
         {
             var rad = (Math.PI / 180) * (angleDegrees - 90);
-            return new Point((int)(cx + (radius * Math.Cos(rad))), (int)(cy + (radius * Math.Sin(rad))));
+            return new Point(cx + (radius * Math.Cos(rad)), cy + (radius * Math.Sin(rad)));
         }
     }
 }
