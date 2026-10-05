@@ -1,6 +1,6 @@
 ﻿AddonId: WheelSpinner_75428eb9-dec4-4aa7-9f1e-62e0a2dcd044
 Type: Generic
-InstallerManifestURL: https://raw.githubusercontent.com/Matlej44/WheelSpinnerPlaynite/refs/heads/master/InstallerManifest.yaml
+InstallerManifestUrl: https://raw.githubusercontent.com/Matlej44/WheelSpinnerPlaynite/refs/heads/master/InstallerManifest.yaml
 ShortDescription: Spinning wheel that allows selecting a random item from library.
 Name: Wheel Spinner
 Author: Matlej44
@@ -8,7 +8,7 @@ SourceUrl: https://github.com/Matlej44/WheelSpinnerPlaynite
 IconUrl: https://raw.githubusercontent.com/Matlej44/WheelSpinnerPlaynite/refs/heads/master/icon.png
 Description: This Playnite extension allows you more control over the random selection of games from your library. It also gives you a nice visual to go with it.
 Links:
-  - GitHub: https://github.com/Matlej44/WheelSpinnerPlaynite
+  GitHub: https://github.com/Matlej44/WheelSpinnerPlaynite
 Screenshots:
   - Thumbnail: https://raw.githubusercontent.com/Matlej44/WheelSpinnerPlaynite/refs/heads/master/Images/Overview.png
     Image: https://raw.githubusercontent.com/Matlej44/WheelSpinnerPlaynite/refs/heads/master/Images/Overview.png
