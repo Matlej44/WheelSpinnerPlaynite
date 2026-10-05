@@ -28,7 +28,7 @@ namespace WheelSpinner.Services
             var window = _api.Dialogs.CreateWindow(new WindowCreationOptions { ShowMinimizeButton = false });
             var content = new SpinWheelWindow(_api, _logger, _settings ,_saveStates.Load());
 
-            window.Title = "Spin Wheel";
+            window.Title = "Spin the Wheel";
             window.ResizeMode = ResizeMode.CanResize;
             window.SizeToContent = SizeToContent.Manual;
             window.MinHeight = 500;
