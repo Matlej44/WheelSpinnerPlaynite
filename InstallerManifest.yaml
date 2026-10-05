@@ -3,6 +3,6 @@ Packages:
   - Version: 1.0.0
     RequiredApiVersion: 6.17.0
     ReleaseDate: 2026-10-05
-    PackageURL: https://github.com/Matlej44/WheelSpinnerPlaynite/releases/download/Version1.0/WheelSpinnerV1.0.pext
+    PackageUrl: https://github.com/Matlej44/WheelSpinnerPlaynite/releases/download/Version1.0/WheelSpinnerV1.0.pext
     Changelog:
       - Initial release
